@@ -1,0 +1,263 @@
+/* ============================================================
+   Getting Started Page — SuperProfile Screenshot 1 Layout
+   ============================================================ */
+
+.getting-started-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.getting-started__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.getting-started__greeting {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+
+/* Learn Banner */
+.getting-started__learn-banner {
+  width: 100%;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1e1710 0%, #2e2013 100%);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  padding: 1.25rem 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.learn-banner__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fef3c7;
+}
+
+.learn-banner__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.learn-banner__btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Roadmap Card */
+.getting-started__roadmap-card {
+  width: 100%;
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.roadmap-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.roadmap-card__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.roadmap-card__progress-text {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.roadmap-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--color-bg-tertiary);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.roadmap-progress-fill {
+  width: 66%;
+  height: 100%;
+  background: linear-gradient(90deg, #38bdf8, #6366f1);
+  border-radius: 999px;
+}
+
+.roadmap-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.roadmap-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.roadmap-step-status-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.status-icon--checked {
+  background: #10b981;
+  color: #fff;
+}
+
+.status-icon--pending {
+  border: 2px dashed var(--color-text-tertiary);
+}
+
+.roadmap-step-content {
+  flex: 1;
+}
+
+.roadmap-step-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.roadmap-step-desc {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.roadmap-step-action-btn {
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  background: #000;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.roadmap-step-action-btn:hover {
+  background: #1e293b;
+}
+
+/* Explore More Apps Section */
+.getting-started__apps-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.apps-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.apps-section__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.apps-section__view-all-btn {
+  font-size: 12px;
+  color: #38bdf8;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+}
+
+.apps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.app-feature-card {
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.app-feature-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-border-light);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.app-feature-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.app-feature-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.app-feature-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.app-feature-tagline {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}

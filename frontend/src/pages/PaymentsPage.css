@@ -1,0 +1,62 @@
+/* ============================================================
+   Payments Page — SuperProfile Payouts & Orders Layout
+   ============================================================ */
+
+.payments-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem 2rem 4rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.payments-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.payments-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.payments-kpis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.payment-kpi-card {
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kpi-card__label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.kpi-card__value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.kpi-card__subtext {
+  font-size: 11px;
+  color: #34d399;
+}

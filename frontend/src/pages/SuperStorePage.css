@@ -1,0 +1,414 @@
+/* ============================================================
+   SuperProfile Store Page — Screenshot 2 Layout
+   ============================================================ */
+
+.super-store-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.25rem 2rem 4rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Sub-tabs row */
+.store-subtabs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.store-tabs-list {
+  display: flex;
+  gap: 20px;
+}
+
+.store-tab-link {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding-bottom: 8px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+
+.store-tab-link--active {
+  color: #38bdf8;
+  border-bottom-color: #38bdf8;
+}
+
+.store-top-url-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.store-url-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  font-size: 12px;
+  font-family: monospace;
+  color: var(--color-text-primary);
+}
+
+.store-url-copy-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.store-url-copy-btn:hover {
+  color: var(--color-text-primary);
+}
+
+.store-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+/* Two-column layout: Left Builder, Right Phone */
+.store-main-split {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 1040px) {
+  .store-main-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.store-builder-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Live Banner (Screenshot 2) */
+.store-live-banner {
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 14px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.live-banner-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.live-banner-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.banner-edit-btn {
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.banner-share-btn {
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Profile Card (Screenshot 2) */
+.store-profile-card {
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.store-profile-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.store-profile-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.store-profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.store-profile-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.store-profile-tagline {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.store-edit-header-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+/* Get the most out of your store Card (Screenshot 2) */
+.store-checklist-card {
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.checklist-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.checklist-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.checklist-desc {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.checklist-video-box {
+  width: 120px;
+  height: 70px;
+  border-radius: 10px;
+  background: #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.checklist-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.checklist-item-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.checklist-radio-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--color-text-tertiary);
+}
+
+/* Action Buttons (Screenshot 2) */
+.store-action-buttons-row {
+  display: flex;
+  gap: 12px;
+}
+
+.add-content-btn {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2563eb, #6366f1);
+  color: #fff;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
+  transition: all 0.15s;
+}
+.add-content-btn:hover {
+  background: linear-gradient(135deg, #1d4ed8, #4f46e5);
+  transform: translateY(-1px);
+}
+
+.add-header-btn {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: 999px;
+  background: var(--color-surface-solid);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Right Column: Phone Preview */
+.store-phone-col {
+  position: sticky;
+  top: 80px;
+  display: flex;
+  justify-content: center;
+}
+
+.super-phone-chassis {
+  width: 320px;
+  height: 640px;
+  background: #000;
+  border-radius: 44px;
+  padding: 10px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 0 2px #262626;
+  display: flex;
+  flex-direction: column;
+}
+
+.super-phone-screen {
+  flex: 1;
+  border-radius: 34px;
+  background: linear-gradient(180deg, #180508 0%, #0a0203 100%);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: #fff;
+  position: relative;
+}
+
+.phone-screen-avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+.phone-screen-name {
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.phone-screen-tagline {
+  font-size: 11px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.phone-screen-blocks {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.phone-screen-block-item {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.phone-screen-block-item:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.14);
+}

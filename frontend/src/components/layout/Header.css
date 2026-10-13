@@ -1,0 +1,376 @@
+/* ============================================================
+   Header — Upgraded Creator SaaS Bar
+   ============================================================ */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-height);
+  padding: 0 var(--space-6);
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+
+.app-header__left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.app-header__page-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.app-header__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-success-light);
+  color: var(--color-success);
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  border: 1px solid rgba(52, 211, 153, 0.2);
+}
+
+.live-pulse {
+  width: 6px;
+  height: 6px;
+  background: var(--color-success);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--color-success);
+  animation: pulseGlow 1.8s infinite;
+}
+
+.app-header__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Store Link Pill */
+.app-header__store-pill {
+  display: flex;
+  align-items: center;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 3px 6px 3px 12px;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+}
+
+.store-pill-handle {
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+  font-family: monospace;
+}
+
+.store-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: var(--color-text-tertiary);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+.store-pill-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-brand);
+}
+
+/* Search */
+.app-header__search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.4rem 0.75rem;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.app-header__search--focused {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 2px var(--color-brand-light);
+}
+
+.app-header__search-icon {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.app-header__search-input {
+  background: none;
+  border: none;
+  outline: none;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  width: 200px;
+}
+.app-header__search-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+/* Icon Buttons & Dropdowns */
+.app-header__dropdown-wrapper {
+  position: relative;
+}
+
+.app-header__icon-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.app-header__icon-btn:hover,
+.app-header__icon-btn--active {
+  color: var(--color-text-primary);
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-light);
+}
+
+.app-header__notification-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-brand);
+  box-shadow: 0 0 6px var(--color-brand);
+}
+
+/* Dropdown menus */
+.theme-dropdown-menu,
+.notif-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  padding: 0.5rem;
+  z-index: 500;
+  min-width: 220px;
+  animation: fadeInUp 0.15s ease-out;
+}
+
+.notif-dropdown-menu {
+  min-width: 320px;
+  padding: 0;
+}
+
+.dropdown-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border-subtle);
+  gap: 6px;
+}
+
+.theme-options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 4px;
+}
+
+.theme-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  transition: background var(--transition-fast);
+  cursor: pointer;
+  text-align: left;
+}
+
+.theme-option-btn:hover {
+  background: var(--color-bg-hover);
+}
+
+.theme-option-btn--active {
+  background: var(--color-brand-light);
+  color: var(--color-brand);
+  font-weight: var(--font-weight-semibold);
+}
+
+.theme-dot-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.theme-option-label {
+  flex: 1;
+}
+
+.theme-check-icon {
+  color: var(--color-brand);
+}
+
+/* Notifications list */
+.notif-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+  transition: background var(--transition-fast);
+}
+.notif-item:hover {
+  background: var(--color-bg-hover);
+}
+
+.notif-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.notif-icon--order {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+.notif-icon--auto {
+  background: var(--color-brand-light);
+  color: var(--color-brand);
+}
+.notif-icon--review {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+.notif-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notif-text {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-primary);
+  line-height: 1.35;
+}
+
+.notif-time {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+}
+
+/* User Profile */
+.app-header__user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.app-header__user:hover {
+  background: var(--color-bg-hover);
+}
+
+.app-header__avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--gradient-brand);
+  color: #fff;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-header__user-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+}
+
+.app-header__username {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.app-header__plan {
+  font-size: 10px;
+  color: var(--color-brand);
+  font-weight: var(--font-weight-medium);
+}
+
+.app-header__user-arrow {
+  color: var(--color-text-tertiary);
+}
+
+@media (max-width: 900px) {
+  .app-header__store-pill {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    padding: 0 var(--space-4);
+    padding-left: calc(var(--space-4) + 48px);
+  }
+  .app-header__search {
+    display: none;
+  }
+  .app-header__user-text {
+    display: none;
+  }
+}

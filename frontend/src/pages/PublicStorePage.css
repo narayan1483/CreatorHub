@@ -1,0 +1,153 @@
+/* ============================================================
+   Public Storefront & Buyer Checkout — SaaS CSS
+   ============================================================ */
+
+.public-store-wrapper {
+  min-height: 100vh;
+  background: #090d16;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 1rem 4rem;
+  position: relative;
+}
+
+.public-store-container {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.public-store-banner {
+  width: 100%;
+  height: 180px;
+  border-radius: 0 0 28px 28px;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+  margin-bottom: -60px;
+}
+
+.public-store-avatar {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  border: 4px solid #090d16;
+  object-fit: cover;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  z-index: 2;
+}
+
+.public-store-header-info {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.public-store-name {
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #fff;
+}
+
+.public-store-handle {
+  font-size: 13px;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+.public-store-bio {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #cbd5e1;
+  max-width: 480px;
+  margin-top: 6px;
+}
+
+.public-socials-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.public-social-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  transition: all 0.2s;
+}
+.public-social-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Public Blocks & Products */
+.public-blocks-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.public-block-card {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(12px);
+}
+
+.public-block-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.public-block-featured {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+  border-color: rgba(168, 85, 247, 0.4);
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.2);
+}
+
+.public-block-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.public-block-subtitle {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 3px;
+}
+
+.public-footer-badge {
+  margin-top: 3rem;
+  font-size: 12px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

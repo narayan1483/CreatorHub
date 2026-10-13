@@ -1,0 +1,60 @@
+/* ============================================================
+   CreatorHub — AI Usage Dashboard CSS
+   ============================================================ */
+
+.ai-usage-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.usage-kpis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.usage-kpi-card {
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.usage-meter-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-bg-secondary);
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.usage-meter-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.usage-breakdown-card {
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.breakdown-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}

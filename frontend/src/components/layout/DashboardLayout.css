@@ -1,0 +1,41 @@
+/* ============================================================
+   Dashboard Layout
+   ============================================================ */
+
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.dashboard-layout__main {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: margin-left var(--transition-base);
+}
+
+.dashboard-layout__content {
+  flex: 1;
+  padding: var(--space-6);
+  overflow-y: auto;
+}
+
+/* Collapsed sidebar */
+.sidebar--collapsed ~ .dashboard-layout__main,
+:has(.sidebar--collapsed) .dashboard-layout__main {
+  margin-left: var(--sidebar-collapsed-width);
+}
+
+@media (max-width: 1024px) {
+  .dashboard-layout__main {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-layout__content {
+    padding: var(--space-4);
+  }
+}

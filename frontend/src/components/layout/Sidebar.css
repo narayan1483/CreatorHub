@@ -1,0 +1,265 @@
+/* ============================================================
+   SuperProfile Sidebar Navigation CSS
+   ============================================================ */
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
+  background: #0f131a;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  z-index: 120;
+  overflow: hidden;
+}
+
+.sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.25rem 1rem;
+}
+
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.sidebar__logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(56, 189, 248, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.sidebar__brand-text {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.sidebar__close-mobile {
+  display: none;
+  color: #94a3b8;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Nav items */
+.sidebar__nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar__section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.08em;
+  padding: 1.25rem 0.65rem 0.4rem;
+}
+
+.sidebar__list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.sidebar__link:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+.sidebar__link--active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-weight: 600;
+}
+
+.sidebar__link--autodm {
+  color: #38bdf8;
+}
+.sidebar__link--autodm.sidebar__link--active {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.sidebar__link-icon {
+  flex-shrink: 0;
+}
+
+.sidebar__link-label {
+  flex: 1;
+}
+
+.sidebar__link-badge--hot {
+  font-size: 9px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #f43f5e, #f97316);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+}
+
+/* SuperProfile Upgrade Card */
+.sidebar__upgrade-card {
+  margin: 0.85rem;
+  padding: 1rem;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  box-shadow: 0 4px 15px rgba(6, 78, 59, 0.4);
+}
+
+.upgrade-card__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #a7f3d0;
+  margin-bottom: 4px;
+}
+
+.upgrade-card__desc {
+  font-size: 11px;
+  color: #d1fae5;
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+
+.upgrade-card__btn {
+  width: 100%;
+  padding: 0.45rem;
+  border-radius: 8px;
+  background: #fff;
+  color: #064e3b;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.upgrade-card__btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Bottom user profile */
+.sidebar__user-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.85rem 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+.sidebar__user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #334155;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar__user-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.sidebar__user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.sidebar__user-handle {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.sidebar__user-arrow {
+  color: #64748b;
+}
+
+/* Mobile responsive rules */
+.sidebar-mobile-toggle {
+  display: none;
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 150;
+  background: #1e293b;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .sidebar-mobile-toggle {
+    display: flex;
+  }
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+  .sidebar--mobile-open {
+    transform: translateX(0);
+  }
+  .sidebar__close-mobile {
+    display: block;
+  }
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 119;
+  }
+}
