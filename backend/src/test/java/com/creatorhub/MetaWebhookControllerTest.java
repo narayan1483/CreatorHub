@@ -101,8 +101,45 @@ class MetaWebhookControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("EVENT_RECEIVED", response.getBody());
 
-        verify(webhookEventRepository, times(1)).save(any(WebhookEvent.class));
+        verify(webhookEventRepository, times(1)).saveAndFlush(any(WebhookEvent.class));
         verify(eventProducer, times(1)).sendCommentEvent(any());
+    }
+
+    @Test
+    void testIncomingWebhookStorageFailureReturns500SoMetaRetries() throws Exception {
+        String payload = """
+        {
+          "object": "instagram",
+          "entry": [
+            {
+              "id": "17841400000000000",
+              "time": 1728888888,
+              "changes": [
+                {
+                  "field": "comments",
+                  "value": {
+                    "id": "comment_db_fail_1",
+                    "text": "Send me the link",
+                    "from": { "id": "u_fail", "username": "tester" },
+                    "media": { "id": "m_fail" }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+        """;
+
+        String signature = computeHmacSha256(payload, appSecret);
+        when(webhookEventRepository.existsByProviderAndEventId("INSTAGRAM", "comment_db_fail_1")).thenReturn(false);
+        doThrow(new RuntimeException("PostgreSQL connection timeout"))
+                .when(webhookEventRepository).saveAndFlush(any(WebhookEvent.class));
+
+        ResponseEntity<String> response = controller.handleIncomingWebhook("sha256=" + signature, payload);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals("Storage or processing failure", response.getBody());
+        verify(eventProducer, never()).sendCommentEvent(any());
     }
 
     @Test
@@ -115,7 +152,7 @@ class MetaWebhookControllerTest {
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
         assertEquals("Invalid HMAC signature", response.getBody());
 
-        verify(webhookEventRepository, never()).save(any());
+        verify(webhookEventRepository, never()).saveAndFlush(any());
         verify(eventProducer, never()).sendCommentEvent(any());
     }
 

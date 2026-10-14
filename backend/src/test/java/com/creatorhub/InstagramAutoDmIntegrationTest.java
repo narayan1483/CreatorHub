@@ -77,7 +77,7 @@ class InstagramAutoDmIntegrationTest {
         when(workflowRepository.findByWorkspaceIdOrderByCreatedAtDesc(any()))
                 .thenReturn(List.of(blueprintWorkflow));
 
-        when(metaGraphApiClient.sendDirectMessage(any(), any(), any(), any(), anyBoolean()))
+        when(metaGraphApiClient.sendDirectMessage(any(), any(), any(), any(), any(), anyBoolean()))
                 .thenReturn(new MetaGraphApiClient.DeliveryResult(true, true, "mid_123", "Dry run"));
     }
 
@@ -148,7 +148,7 @@ class InstagramAutoDmIntegrationTest {
 
         assertEquals(0, blueprintWorkflow.getRunsCount());
         verify(executionRepository, never()).save(any());
-        verify(metaGraphApiClient, never()).sendDirectMessage(any(), any(), any(), any(), anyBoolean());
+        verify(metaGraphApiClient, never()).sendDirectMessage(any(), any(), any(), any(), any(), anyBoolean());
     }
 
     @Test

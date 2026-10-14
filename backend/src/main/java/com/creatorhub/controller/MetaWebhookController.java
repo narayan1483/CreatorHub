@@ -114,9 +114,12 @@ public class MetaWebhookController {
             }
 
             return ResponseEntity.ok("EVENT_RECEIVED");
-        } catch (Exception e) {
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
             log.error("[MetaWebhook] Malformed webhook JSON payload: {}", e.getMessage());
             return ResponseEntity.badRequest().body("Malformed payload");
+        } catch (Exception e) {
+            log.error("[MetaWebhook] Webhook event durable storage failure: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Storage or processing failure");
         }
     }
 
@@ -137,9 +140,9 @@ public class MetaWebhookController {
             return;
         }
 
-        // Persist incoming audit record
+        // Persist incoming audit record durably before acknowledging
         WebhookEvent webhookEvent = new WebhookEvent("INSTAGRAM", commentId, "comments", rawPayload);
-        webhookEventRepository.save(webhookEvent);
+        webhookEventRepository.saveAndFlush(webhookEvent);
 
         // Construct event DTO and publish to Kafka
         InstagramCommentEvent event = new InstagramCommentEvent(

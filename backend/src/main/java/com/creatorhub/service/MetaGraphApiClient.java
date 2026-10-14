@@ -50,9 +50,30 @@ public class MetaGraphApiClient {
      * @param accessToken Decrypted Meta Page access token
      * @param isDryRun When true, simulates without calling external Meta network
      */
+    @org.springframework.beans.factory.annotation.Value("${creatorhub.meta.live-mode:false}")
+    private boolean liveModeConfigured;
+
     public DeliveryResult sendDirectMessage(String pageId, String recipientIgid, String text, String accessToken, boolean isDryRun) {
-        if (isDryRun || accessToken == null || accessToken.startsWith("demo_") || accessToken.contains("test")) {
-            log.info("[MetaGraphApi] DRY_RUN simulation active. Not sending actual Instagram DM to: {}", recipientIgid);
+        return sendDirectMessage(pageId, recipientIgid, null, text, accessToken, isDryRun);
+    }
+
+    /**
+     * Dispatches an automated Direct Message to a commenter via Meta Graph API v19.0.
+     * Policy constraint: Single response to comment allowed within 7 days using recipient: { comment_id: id }
+     *
+     * @param pageId The connected Meta Page ID / Instagram Business Account ID
+     * @param recipientIgid The recipient's Instagram-scoped ID (IGSID)
+     * @param commentId The comment ID to reply to directly (official Instagram private reply)
+     * @param text Message body
+     * @param accessToken Decrypted Meta Page access token
+     * @param isDryRun When true, simulates without calling external Meta network
+     */
+    public DeliveryResult sendDirectMessage(String pageId, String recipientIgid, String commentId, String text, String accessToken, boolean isDryRun) {
+        boolean effectiveDryRun = isDryRun || !liveModeConfigured || accessToken == null || accessToken.startsWith("demo_") || accessToken.contains("test");
+
+        if (effectiveDryRun) {
+            String target = commentId != null ? "comment:" + commentId : "igid:" + recipientIgid;
+            log.info("[MetaGraphApi] DRY_RUN simulation active (liveModeConfigured={}). Not sending actual Instagram DM to: {}", liveModeConfigured, target);
             return new DeliveryResult(true, true, "dry_run_mid_" + System.currentTimeMillis(), "Dry-run mode active. No external Meta API called.");
         }
 
@@ -64,7 +85,12 @@ public class MetaGraphApiClient {
             headers.setBearerAuth(accessToken);
 
             Map<String, Object> body = new HashMap<>();
-            body.put("recipient", Map.of("id", recipientIgid));
+            if (commentId != null && !commentId.isBlank()) {
+                // Official Meta API v19.0: Private reply to Instagram comment
+                body.put("recipient", Map.of("comment_id", commentId));
+            } else {
+                body.put("recipient", Map.of("id", recipientIgid));
+            }
             body.put("message", Map.of("text", text));
             body.put("messaging_type", "RESPONSE");
 

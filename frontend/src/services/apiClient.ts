@@ -386,6 +386,32 @@ class ApiClient {
     return await this.request(`/api/v1/workspaces/${workspaceId}/automations/executions`);
   }
 
+  async getInstagramDiagnostics(workspaceId: string): Promise<InstagramDiagnosticsDto> {
+    return await this.request<InstagramDiagnosticsDto>(`/api/v1/workspaces/${workspaceId}/automations/diagnostics`);
+  }
+
+  async connectInstagramAccount(workspaceId: string, payload: {
+    accountHandle: string;
+    providerAccountId: string;
+    accessToken?: string;
+  }): Promise<InstagramDiagnosticsDto> {
+    return await this.request<InstagramDiagnosticsDto>(`/api/v1/workspaces/${workspaceId}/automations/connect`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async testDryRunComment(workspaceId: string, payload: {
+    commentText: string;
+    commenterUsername?: string;
+    mediaId?: string;
+  }) {
+    return await this.request(`/api/v1/workspaces/${workspaceId}/automations/diagnostics/test-dry-run`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
   async simulateComment(workspaceId: string, payload: {
     postInstagramId: string;
     commenterUsername: string;
@@ -396,6 +422,45 @@ class ApiClient {
       body: JSON.stringify(payload),
     });
   }
+}
+
+export interface InstagramDiagnosticsDto {
+  connected: boolean;
+  accountHandle: string;
+  providerAccountId: string;
+  status: string;
+  tokenConfigured: boolean;
+  tokenMasked?: string;
+  tokenValid: boolean;
+  tokenExpiresAt?: string;
+  dispatchMode: 'DRY_RUN' | 'LIVE';
+  liveModeEnabled: boolean;
+  webhook: {
+    url: string;
+    verifyTokenConfigured: boolean;
+    appSecretConfigured: boolean;
+    subscribedFields: string[];
+    signatureAlgorithm: string;
+    reachabilityStatus: string;
+  };
+  kafka: {
+    brokerStatus: string;
+    consumerActive: boolean;
+    topic: string;
+    fallbackQueueActive: boolean;
+  };
+  engine: {
+    activeWorkflowsCount: number;
+    totalExecutionsCount: number;
+    matchTypesSupported: string[];
+  };
+  permissions: Array<{
+    permission: string;
+    required: boolean;
+    granted: boolean;
+    description: string;
+  }>;
+  setupChecklist: string[];
 }
 
 export const apiClient = new ApiClient();

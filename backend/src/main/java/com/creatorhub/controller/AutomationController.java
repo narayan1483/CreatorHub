@@ -68,4 +68,30 @@ public class AutomationController {
         List<com.creatorhub.model.AutomationExecution> executions = automationService.getExecutions(workspaceId, userPrincipal.getId());
         return ResponseEntity.ok(ApiResponse.ok(executions));
     }
+
+    @GetMapping("/diagnostics")
+    public ResponseEntity<ApiResponse<com.creatorhub.dto.autodm.InstagramDiagnosticsDto>> getDiagnostics(
+            @PathVariable UUID workspaceId,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        com.creatorhub.dto.autodm.InstagramDiagnosticsDto diagnostics = automationService.getDiagnostics(workspaceId, userPrincipal.getId());
+        return ResponseEntity.ok(ApiResponse.ok("Instagram diagnostics fetched successfully", diagnostics));
+    }
+
+    @PostMapping("/connect")
+    public ResponseEntity<ApiResponse<com.creatorhub.dto.autodm.InstagramDiagnosticsDto>> connectAccount(
+            @PathVariable UUID workspaceId,
+            @Valid @RequestBody com.creatorhub.dto.autodm.ConnectInstagramRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        com.creatorhub.dto.autodm.InstagramDiagnosticsDto updated = automationService.connectInstagramAccount(workspaceId, userPrincipal.getId(), request);
+        return ResponseEntity.ok(ApiResponse.ok("Instagram account connection updated successfully", updated));
+    }
+
+    @PostMapping("/diagnostics/test-dry-run")
+    public ResponseEntity<ApiResponse<com.creatorhub.model.AutomationExecution>> testDryRun(
+            @PathVariable UUID workspaceId,
+            @Valid @RequestBody com.creatorhub.dto.autodm.TestDryRunRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        com.creatorhub.model.AutomationExecution execution = automationService.runTestDryRun(workspaceId, userPrincipal.getId(), request);
+        return ResponseEntity.ok(ApiResponse.ok("Dry-run comment test executed successfully", execution));
+    }
 }
