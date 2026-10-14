@@ -12,6 +12,9 @@ import {
   X,
   Sparkles,
   Palette,
+  Eye,
+  EyeOff,
+  Trash2,
 } from 'lucide-react';
 import {
   mockStoreBlocks,
@@ -67,32 +70,99 @@ export function SuperStorePage() {
   const [newTitle, setNewTitle] = useState('');
   const [newType, setNewType] = useState<StoreContentBlock['type']>('digital');
   const [newPrice, setNewPrice] = useState('499');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleCopyLink = () => {
-    navigator.clipboard?.writeText(`https://${user.storeUrl}`);
+    const slug = activeWorkspace?.slug || user.handle;
+    const url = `${window.location.origin}/store/${slug}`;
+    navigator.clipboard?.writeText(url);
     setCopied(true);
-    showToast('Storefront link copied to clipboard! 🔗', 'success');
+    showToast(`Storefront link copied: ${url} 🔗`, 'success');
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleAddBlock = (e: React.FormEvent) => {
+  const handleToggleVisibility = async (blockId: string) => {
+    if (!activeWorkspace?.id) return;
+    try {
+      await apiClient.toggleProductVisibility(activeWorkspace.id, blockId);
+      setBlocks((prev) =>
+        prev.map((b) => (b.id === blockId ? { ...b, visible: !b.visible } : b))
+      );
+      showToast('Product visibility updated!', 'info');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update visibility', 'error');
+    }
+  };
+
+  const handleDeleteProduct = async (blockId: string) => {
+    if (!activeWorkspace?.id) return;
+    try {
+      await apiClient.deleteProduct(activeWorkspace.id, blockId);
+      setBlocks((prev) => prev.filter((b) => b.id !== blockId));
+      showToast('Product removed from store', 'info');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete product', 'error');
+    }
+  };
+
+  const handleAddBlock = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
 
-    const newBlock: StoreContentBlock = {
-      id: `blk-${Date.now().toString().slice(-4)}`,
-      type: newType,
-      title: newTitle,
-      subtitle: newType === 'lead_magnet' ? 'Free download in exchange for email' : 'Instant digital delivery',
-      price: newType === 'lead_magnet' ? 0 : Number(newPrice) || 0,
-      badge: newType === 'lead_magnet' ? 'FREE' : 'NEW',
-      visible: true,
+    const typeMapping: Record<string, string> = {
+      digital: 'DIGITAL_FILE',
+      booking: 'CALL',
+      community: 'COMMUNITY',
+      lead_magnet: 'LEAD_MAGNET',
+      link: 'DIGITAL_FILE',
     };
 
-    setBlocks([newBlock, ...blocks]);
-    setIsAddContentOpen(false);
-    setNewTitle('');
-    showToast(`Added "${newTitle}" to your store! 🚀`, 'success');
+    if (activeWorkspace?.id) {
+      setIsSubmitting(true);
+      try {
+        const created = await apiClient.createProduct(activeWorkspace.id, {
+          title: newTitle.trim(),
+          type: typeMapping[newType] || 'DIGITAL_FILE',
+          price: newType === 'lead_magnet' ? 0 : Number(newPrice) || 0,
+          badge: newType === 'lead_magnet' ? 'FREE' : 'NEW',
+          subtitle: newType === 'lead_magnet' ? 'Free download in exchange for email' : 'Instant digital delivery',
+          visible: true,
+        });
+
+        const newBlock: StoreContentBlock = {
+          id: created.id,
+          type: newType,
+          title: created.title,
+          subtitle: created.subtitle || undefined,
+          price: Number(created.price),
+          badge: created.badge || undefined,
+          visible: created.visible,
+        };
+
+        setBlocks([newBlock, ...blocks]);
+        setIsAddContentOpen(false);
+        setNewTitle('');
+        showToast(`Added "${newTitle}" to your store! 🚀`, 'success');
+      } catch (err: any) {
+        showToast(err.message || 'Failed to save product to backend', 'error');
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      const newBlock: StoreContentBlock = {
+        id: `blk-${Date.now().toString().slice(-4)}`,
+        type: newType,
+        title: newTitle,
+        subtitle: newType === 'lead_magnet' ? 'Free download in exchange for email' : 'Instant digital delivery',
+        price: newType === 'lead_magnet' ? 0 : Number(newPrice) || 0,
+        badge: newType === 'lead_magnet' ? 'FREE' : 'NEW',
+        visible: true,
+      };
+      setBlocks([newBlock, ...blocks]);
+      setIsAddContentOpen(false);
+      setNewTitle('');
+      showToast(`Added "${newTitle}" to your store! 🚀`, 'success');
+    }
   };
 
   return (
@@ -277,11 +347,20 @@ export function SuperStorePage() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
+                      opacity: block.visible ? 1 : 0.6,
+                      transition: 'all 0.2s ease',
                     }}
                   >
                     <div>
-                      <div style={{ fontWeight: 600, color: 'var(--color-text-primary)', fontSize: 14 }}>{block.title}</div>
-                      <div style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>{block.subtitle}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontWeight: 600, color: 'var(--color-text-primary)', fontSize: 14 }}>{block.title}</span>
+                        {!block.visible && (
+                          <span style={{ fontSize: 10, background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', padding: '2px 6px', borderRadius: 6, fontWeight: 700 }}>
+                            HIDDEN
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 2 }}>{block.subtitle}</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       {block.badge && <span className="badge badge-rose">{block.badge}</span>}
@@ -290,6 +369,38 @@ export function SuperStorePage() {
                           {block.price === 0 ? 'FREE' : `₹${block.price}`}
                         </strong>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleVisibility(block.id)}
+                        title={block.visible ? 'Hide from public storefront' : 'Make visible on storefront'}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: block.visible ? 'var(--color-text-secondary)' : '#f87171',
+                          cursor: 'pointer',
+                          padding: 4,
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {block.visible ? <Eye size={16} /> : <EyeOff size={16} />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteProduct(block.id)}
+                        title="Delete product"
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--color-text-secondary)',
+                          cursor: 'pointer',
+                          padding: 4,
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -503,8 +614,8 @@ export function SuperStorePage() {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Add to Store
+                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? 'Saving to Database...' : 'Add to Store'}
                 </button>
               </div>
             </form>

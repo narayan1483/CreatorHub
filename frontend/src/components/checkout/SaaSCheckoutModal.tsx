@@ -14,6 +14,7 @@ import {
   Tag,
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
+import { apiClient } from '../../services/apiClient';
 import './SaaSCheckoutModal.css';
 
 export interface CheckoutProductInfo {
@@ -26,11 +27,12 @@ export interface CheckoutProductInfo {
 
 interface SaaSCheckoutModalProps {
   product: CheckoutProductInfo | null;
+  workspaceId?: string;
   onClose: () => void;
   onSuccess?: () => void;
 }
 
-export function SaaSCheckoutModal({ product, onClose, onSuccess }: SaaSCheckoutModalProps) {
+export function SaaSCheckoutModal({ product, workspaceId, onClose, onSuccess }: SaaSCheckoutModalProps) {
   const { showToast } = useToast();
 
   const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card' | 'netbanking'>('upi');
@@ -42,6 +44,7 @@ export function SaaSCheckoutModal({ product, onClose, onSuccess }: SaaSCheckoutM
   const [discountApplied, setDiscountApplied] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [transactionRef, setTransactionRef] = useState<string>('');
 
   if (!product) return null;
 
@@ -61,7 +64,7 @@ export function SaaSCheckoutModal({ product, onClose, onSuccess }: SaaSCheckoutM
     }
   };
 
-  const handleExecutePayment = (e: React.FormEvent) => {
+  const handleExecutePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!buyerName || !buyerEmail) {
       showToast('Please enter your full name and email address', 'error');
@@ -69,12 +72,32 @@ export function SaaSCheckoutModal({ product, onClose, onSuccess }: SaaSCheckoutM
     }
 
     setIsProcessing(true);
-    setTimeout(() => {
-      setIsProcessing(false);
-      setIsCompleted(true);
-      showToast('Payment confirmed! Digital assets dispatched 🚀', 'success');
-      if (onSuccess) onSuccess();
-    }, 1400);
+    if (workspaceId && product.id) {
+      try {
+        const order = await apiClient.checkoutOrder(workspaceId, {
+          productId: product.id,
+          customerName: buyerName.trim(),
+          customerEmail: buyerEmail.trim(),
+          customerPhone: buyerPhone.trim() || undefined,
+          paymentMethod,
+        });
+        setTransactionRef(order.transactionRef);
+        setIsCompleted(true);
+        showToast(`Payment confirmed! Order ref: ${order.transactionRef} 🚀`, 'success');
+        if (onSuccess) onSuccess();
+      } catch (err: any) {
+        showToast(err.message || 'Payment processing failed. Please try again.', 'error');
+      } finally {
+        setIsProcessing(false);
+      }
+    } else {
+      setTimeout(() => {
+        setIsProcessing(false);
+        setIsCompleted(true);
+        showToast('Payment confirmed! Digital assets dispatched 🚀', 'success');
+        if (onSuccess) onSuccess();
+      }, 1000);
+    }
   };
 
   return (
@@ -106,6 +129,12 @@ export function SaaSCheckoutModal({ product, onClose, onSuccess }: SaaSCheckoutM
               We have generated your instant digital licenses and dispatched receipt to{' '}
               <strong>{buyerEmail}</strong>.
             </p>
+
+            {transactionRef && (
+              <div style={{ margin: '4px 0 16px 0', fontSize: 13, color: '#818cf8', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.25)', padding: '6px 14px', borderRadius: 8, display: 'inline-block', fontWeight: 600 }}>
+                Order Reference: {transactionRef}
+              </div>
+            )}
 
             {/* Purchased Items Card */}
             <div className="success-summary-box">

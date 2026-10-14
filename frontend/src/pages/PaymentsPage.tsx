@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Download,
   CreditCard,
@@ -9,12 +9,45 @@ import {
   mockPaymentTransactions,
   type PaymentTransaction,
 } from '../data/mockData';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { apiClient } from '../services/apiClient';
 import './PaymentsPage.css';
 
 export function PaymentsPage() {
   const [transactions, setTransactions] = useState<PaymentTransaction[]>(mockPaymentTransactions);
+  const { activeWorkspace } = useAuth();
   const { showToast } = useToast();
+
+  useEffect(() => {
+    if (!activeWorkspace?.id) return;
+    let cancelled = false;
+    apiClient.getWorkspaceOrders(activeWorkspace.id)
+      .then((data) => {
+        if (cancelled) return;
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped: PaymentTransaction[] = data.map((o) => {
+            const rawMethod = (o.paymentMethod || 'upi').toLowerCase();
+            const method: 'upi' | 'card' | 'netbanking' =
+              rawMethod === 'card' ? 'card' : rawMethod === 'netbanking' ? 'netbanking' : 'upi';
+            return {
+              id: o.id,
+              transactionRef: o.transactionRef || o.id,
+              customerName: o.customerName,
+              customerEmail: o.customerEmail,
+              productName: o.productTitle || 'Digital Product',
+              amount: Number(o.amount),
+              date: new Date(o.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }),
+              status: 'completed' as const,
+              paymentMethod: method,
+            };
+          });
+          setTransactions(mapped);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [activeWorkspace?.id]);
 
   const totalGross = transactions.reduce((acc, t) => acc + (t.status === 'completed' ? t.amount : 0), 0);
 

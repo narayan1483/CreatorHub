@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Search,
   Filter,
@@ -16,15 +16,42 @@ import {
   type AudienceSegment,
   type AudienceContact,
 } from '../data/mockData';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { apiClient } from '../services/apiClient';
 import './AudiencePage.css';
 
 export function AudiencePage() {
   const [activeTab, setActiveTab] = useState<'segments' | 'contacts'>('segments');
   const [searchQuery, setSearchQuery] = useState('');
   const [segments] = useState<AudienceSegment[]>(mockAudienceSegments);
-  const [contacts] = useState<AudienceContact[]>(mockAudienceContacts);
+  const [contacts, setContacts] = useState<AudienceContact[]>(mockAudienceContacts);
+  const { activeWorkspace } = useAuth();
   const { showToast } = useToast();
+
+  useEffect(() => {
+    if (!activeWorkspace?.id) return;
+    let cancelled = false;
+    apiClient.getWorkspaceCustomers(activeWorkspace.id)
+      .then((data) => {
+        if (!cancelled && Array.isArray(data) && data.length > 0) {
+          const mapped: AudienceContact[] = data.map((c) => ({
+            id: c.id,
+            name: c.name,
+            email: c.email,
+            phone: c.phone || '',
+            instagramHandle: c.instagramHandle || '',
+            segment: c.segment || 'Customers',
+            totalSpend: Number(c.totalSpend),
+            ordersCount: c.ordersCount,
+            lastActive: 'Active recently',
+          }));
+          setContacts(mapped);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [activeWorkspace?.id]);
 
   const filteredSegments = segments.filter((s) =>
     s.name.toLowerCase().includes(searchQuery.toLowerCase())

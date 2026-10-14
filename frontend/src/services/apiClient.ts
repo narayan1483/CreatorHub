@@ -60,6 +60,72 @@ export interface CreateWorkspacePayload {
   theme?: string;
 }
 
+export interface CreateProductPayload {
+  title: string;
+  slug?: string;
+  subtitle?: string;
+  type: string;
+  price: number;
+  badge?: string;
+  coverImageUrl?: string;
+  deliveryUrl?: string;
+  visible?: boolean;
+  sortOrder?: number;
+}
+
+export interface ProductDto {
+  id: string;
+  workspaceId: string;
+  title: string;
+  slug: string;
+  subtitle?: string;
+  type: string;
+  price: number;
+  badge?: string;
+  coverImageUrl?: string;
+  deliveryUrl?: string;
+  visible: boolean;
+  sortOrder: number;
+  salesCount: number;
+}
+
+export interface CreateOrderPayload {
+  productId: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  paymentMethod?: string;
+}
+
+export interface OrderDto {
+  id: string;
+  workspaceId: string;
+  productId: string;
+  productTitle: string;
+  amount: number;
+  currency: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  transactionRef: string;
+  createdAt: string;
+}
+
+export interface CustomerDto {
+  id: string;
+  workspaceId: string;
+  name: string;
+  email: string;
+  phone?: string;
+  instagramHandle?: string;
+  totalSpend: number;
+  ordersCount: number;
+  segment?: string;
+  createdAt: string;
+}
+
 class ApiClient {
   private isRefreshing = false;
   private refreshSubscribers: ((token: string) => void)[] = [];
@@ -232,20 +298,50 @@ class ApiClient {
     });
   }
 
-  async getWorkspaceProducts(workspaceId: string) {
-    return await this.request(`/api/v1/workspaces/${workspaceId}/products`);
+  async getWorkspaceBySlug(slug: string): Promise<WorkspaceSummary> {
+    return await this.request<WorkspaceSummary>(`/api/v1/workspaces/by-slug/${slug}`);
   }
 
-  async getPublicProducts(workspaceId: string) {
-    return await this.request(`/api/v1/workspaces/${workspaceId}/products/public`);
+  async getWorkspaceProducts(workspaceId: string): Promise<ProductDto[]> {
+    return await this.request<ProductDto[]>(`/api/v1/workspaces/${workspaceId}/products`);
   }
 
-  async getWorkspaceCustomers(workspaceId: string) {
-    return await this.request(`/api/v1/workspaces/${workspaceId}/customers`);
+  async getPublicProducts(workspaceId: string): Promise<ProductDto[]> {
+    return await this.request<ProductDto[]>(`/api/v1/workspaces/${workspaceId}/products/public`);
   }
 
-  async getWorkspaceOrders(workspaceId: string) {
-    return await this.request(`/api/v1/workspaces/${workspaceId}/orders`);
+  async createProduct(workspaceId: string, payload: CreateProductPayload): Promise<ProductDto> {
+    return await this.request<ProductDto>(`/api/v1/workspaces/${workspaceId}/products`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async toggleProductVisibility(workspaceId: string, productId: string): Promise<ProductDto> {
+    return await this.request<ProductDto>(`/api/v1/workspaces/${workspaceId}/products/${productId}/visibility`, {
+      method: 'PATCH',
+    });
+  }
+
+  async deleteProduct(workspaceId: string, productId: string): Promise<void> {
+    await this.request<void>(`/api/v1/workspaces/${workspaceId}/products/${productId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async checkoutOrder(workspaceId: string, payload: CreateOrderPayload): Promise<OrderDto> {
+    return await this.request<OrderDto>(`/api/v1/workspaces/${workspaceId}/orders/checkout`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getWorkspaceCustomers(workspaceId: string): Promise<CustomerDto[]> {
+    return await this.request<CustomerDto[]>(`/api/v1/workspaces/${workspaceId}/customers`);
+  }
+
+  async getWorkspaceOrders(workspaceId: string): Promise<OrderDto[]> {
+    return await this.request<OrderDto[]>(`/api/v1/workspaces/${workspaceId}/orders`);
   }
 
   async getWorkspaceAutomations(workspaceId: string) {
