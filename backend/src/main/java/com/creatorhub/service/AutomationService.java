@@ -43,6 +43,9 @@ public class AutomationService {
     private final MetaGraphApiClient metaGraphApiClient;
     private final WebhookEventRepository webhookEventRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${creatorhub.meta.live-mode:false}")
+    private boolean liveModeConfigured;
+
     public AutomationService(
             AutomationWorkflowRepository workflowRepository,
             AutomationExecutionRepository executionRepository,
@@ -270,9 +273,13 @@ public class AutomationService {
         InstagramDiagnosticsDto dto = new InstagramDiagnosticsDto();
 
         Optional<SocialConnection> connOpt = socialConnectionRepository.findByWorkspaceIdAndProvider(workspaceId, "INSTAGRAM");
+        boolean isConnected = false;
+        boolean isTokenValid = false;
+
         if (connOpt.isPresent()) {
             SocialConnection conn = connOpt.get();
-            dto.setConnected("CONNECTED".equalsIgnoreCase(conn.getStatus()));
+            isConnected = "CONNECTED".equalsIgnoreCase(conn.getStatus());
+            dto.setConnected(isConnected);
             dto.setAccountHandle(conn.getAccountHandle());
             dto.setProviderAccountId(conn.getProviderAccountId());
             dto.setStatus(conn.getStatus());
@@ -282,30 +289,40 @@ public class AutomationService {
             if (conn.getEncryptedAccessToken() != null) {
                 try {
                     String decrypted = tokenEncryptionService.decrypt(conn.getEncryptedAccessToken());
-                    dto.setTokenValid(decrypted != null && !decrypted.isBlank());
+                    isTokenValid = decrypted != null && !decrypted.isBlank();
+                    if (conn.getTokenExpiresAt() != null && conn.getTokenExpiresAt().isBefore(java.time.Instant.now())) {
+                        isTokenValid = false;
+                        dto.setStatus("EXPIRED");
+                    }
+                    dto.setTokenValid(isTokenValid);
                     if (decrypted != null && decrypted.length() > 8) {
                         dto.setTokenMasked(decrypted.substring(0, 4) + "••••••••" + decrypted.substring(decrypted.length() - 4));
-                    } else {
+                    } else if (decrypted != null && !decrypted.isBlank()) {
                         dto.setTokenMasked("••••••••");
+                    } else {
+                        dto.setTokenMasked(null);
                     }
                 } catch (Exception e) {
                     dto.setTokenValid(false);
                     dto.setTokenMasked("ENCRYPTION_ERROR");
                 }
+            } else {
+                dto.setTokenValid(false);
+                dto.setTokenMasked(null);
             }
         } else {
-            // Default profile status
-            dto.setConnected(true);
-            dto.setAccountHandle("code.withnarayan");
-            dto.setProviderAccountId("17841400000000001");
-            dto.setStatus("CONNECTED");
-            dto.setTokenConfigured(true);
-            dto.setTokenMasked("EAAG...3x9K");
-            dto.setTokenValid(true);
+            // Real account status: not connected
+            dto.setConnected(false);
+            dto.setAccountHandle(null);
+            dto.setProviderAccountId(null);
+            dto.setStatus("NOT_CONNECTED");
+            dto.setTokenConfigured(false);
+            dto.setTokenMasked(null);
+            dto.setTokenValid(false);
         }
 
-        dto.setDispatchMode("DRY_RUN");
-        dto.setLiveModeEnabled(false);
+        dto.setDispatchMode(liveModeConfigured ? "LIVE" : "DRY_RUN");
+        dto.setLiveModeEnabled(liveModeConfigured);
 
         // Webhook diagnostics
         dto.setWebhook(new InstagramDiagnosticsDto.WebhookDiagnostics(
@@ -334,23 +351,24 @@ public class AutomationService {
                 List.of("contains", "exact")
         ));
 
-        // Required permissions
+        // Required permissions - strictly reflect real connection validity
+        boolean permissionsActive = isConnected && isTokenValid;
         dto.setPermissions(List.of(
-                new InstagramDiagnosticsDto.PermissionStatus("instagram_manage_comments", true, true, "Read comments on posts and reels and post public replies"),
-                new InstagramDiagnosticsDto.PermissionStatus("instagram_manage_messages", true, true, "Send automated Direct Messages in response to comments within 7 days"),
-                new InstagramDiagnosticsDto.PermissionStatus("pages_manage_metadata", true, true, "Subscribe to official Meta Graph API webhooks"),
-                new InstagramDiagnosticsDto.PermissionStatus("pages_read_engagement", true, true, "Read follower events and engagement telemetry")
+                new InstagramDiagnosticsDto.PermissionStatus("instagram_manage_comments", permissionsActive, permissionsActive, "Read comments on posts and reels and post public replies"),
+                new InstagramDiagnosticsDto.PermissionStatus("instagram_manage_messages", permissionsActive, permissionsActive, "Send automated Direct Messages in response to comments within 7 days"),
+                new InstagramDiagnosticsDto.PermissionStatus("pages_manage_metadata", permissionsActive, permissionsActive, "Subscribe to official Meta Graph API webhooks"),
+                new InstagramDiagnosticsDto.PermissionStatus("pages_read_engagement", permissionsActive, permissionsActive, "Read follower events and engagement telemetry")
         ));
 
-        // Setup checklist for connecting real account
+        // Official Meta Setup checklist for connecting real account
         dto.setSetupChecklist(List.of(
-                "1. Switch Instagram profile to Professional (Creator or Business) in mobile app settings",
-                "2. Link your Instagram account to a published Facebook Page",
+                "1. Switch Instagram profile to Professional (Creator or Business) in Instagram Mobile App Settings",
+                "2. Link your Instagram account to a published Facebook Page in Meta Accounts Center",
                 "3. In Instagram app: Settings > Messages and story replies > Message controls > Enable 'Allow access to messages'",
-                "4. In Meta Developers Console: Add 'Instagram Graph API' and configure Webhook URL with Verify Token",
-                "5. Subscribe to the 'comments' webhook field on your Page",
-                "6. Generate a Page Access Token with instagram_manage_comments and instagram_manage_messages",
-                "7. Enter your Page Access Token into CreatorHub (tokens are automatically AES-256-GCM encrypted)"
+                "4. In Meta Developer Portal: Add 'Instagram Graph API' and configure Webhook Callback URL with Verify Token",
+                "5. Subscribe to the 'comments' and 'messages' webhook fields on your Page",
+                "6. Click 'Connect with Instagram' to complete official Meta OAuth 2.0 flow (tokens are stored encrypted with AES-256-GCM)",
+                "7. Keep dispatch mode in DRY_RUN to test safely without notifying actual followers until ready for LIVE"
         ));
 
         return dto;
@@ -379,6 +397,20 @@ public class AutomationService {
         conn.setStatus("CONNECTED");
         socialConnectionRepository.save(conn);
 
+        return getDiagnostics(workspaceId, userId);
+    }
+
+    @Transactional
+    public InstagramDiagnosticsDto disconnectInstagramAccount(UUID workspaceId, UUID userId) {
+        workspaceService.assertUserAccess(workspaceId, userId);
+        Optional<SocialConnection> connOpt = socialConnectionRepository.findByWorkspaceIdAndProvider(workspaceId, "INSTAGRAM");
+        if (connOpt.isPresent()) {
+            SocialConnection conn = connOpt.get();
+            conn.setStatus("DISCONNECTED");
+            conn.setEncryptedAccessToken(null);
+            socialConnectionRepository.save(conn);
+            log.info("Instagram account safely disconnected for workspace: {}", workspaceId);
+        }
         return getDiagnostics(workspaceId, userId);
     }
 

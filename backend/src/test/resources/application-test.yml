@@ -21,8 +21,11 @@ creatorhub:
   security:
     encryption-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
   meta:
-    verify-token: test_verify_token_12345
+    app-id: test_meta_app_id
     app-secret: test_app_secret_12345
+    verify-token: test_verify_token_12345
+    redirect-uri: http://localhost:5173/auth/meta/callback
+    live-mode: false
 
 app:
   jwt:

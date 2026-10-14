@@ -422,6 +422,36 @@ class ApiClient {
       body: JSON.stringify(payload),
     });
   }
+
+  async getMetaOAuthAuthorizeUrl(workspaceId: string): Promise<{
+    authorizationUrl: string;
+    state: string;
+    appId: string;
+    redirectUri: string;
+  }> {
+    return await this.request<{
+      authorizationUrl: string;
+      state: string;
+      appId: string;
+      redirectUri: string;
+    }>(`/api/v1/workspaces/${workspaceId}/oauth/instagram/authorize`);
+  }
+
+  async exchangeMetaOAuthCode(workspaceId: string, payload: {
+    code: string;
+    state: string;
+  }): Promise<InstagramDiagnosticsDto> {
+    return await this.request<InstagramDiagnosticsDto>(`/api/v1/workspaces/${workspaceId}/oauth/instagram/callback`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async disconnectInstagram(workspaceId: string): Promise<InstagramDiagnosticsDto> {
+    return await this.request<InstagramDiagnosticsDto>(`/api/v1/workspaces/${workspaceId}/oauth/instagram/disconnect`, {
+      method: 'POST',
+    });
+  }
 }
 
 export interface InstagramDiagnosticsDto {

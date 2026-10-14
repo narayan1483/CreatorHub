@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Plus,
   Info,
@@ -16,6 +17,7 @@ import {
   Activity,
   Smartphone,
   CheckCircle,
+  AlertCircle,
   ShieldCheck,
   ChevronRight,
   Send,
@@ -104,6 +106,7 @@ const samplePosts = [
 export function AutoDMPage() {
   const [workflows, setWorkflows] = useState<AutoDMWorkflow[]>(mockAutoDMWorkflows);
   const { activeWorkspace } = useAuth();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<
     'automations' | 'diagnostics' | 'simulator' | 'ai_workflow_builder' | 'ai_reply_assistant' | 'product_knowledge' | 'ai_usage' | 'must_haves' | 'settings'
   >('automations');
@@ -111,6 +114,8 @@ export function AutoDMPage() {
   // Diagnostics & Verification state
   const [diagnostics, setDiagnostics] = useState<InstagramDiagnosticsDto | null>(null);
   const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
+  const [connectingOAuth, setConnectingOAuth] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   const [testCommentText, setTestCommentText] = useState('Blueprint please!');
   const [testCommenterUser, setTestCommenterUser] = useState('narayan_dev');
   const [testResult, setTestResult] = useState<any | null>(null);
@@ -141,11 +146,60 @@ export function AutoDMPage() {
     }
   };
 
+  const handleConnectMetaOAuth = async () => {
+    if (!activeWorkspace?.id) {
+      showToast('Please select an active workspace first', 'error');
+      return;
+    }
+    setConnectingOAuth(true);
+    try {
+      const res = await apiClient.getMetaOAuthAuthorizeUrl(activeWorkspace.id);
+      if (res && res.authorizationUrl) {
+        showToast('Redirecting to official Meta OAuth 2.0 authorization...', 'info');
+        window.location.href = res.authorizationUrl;
+      } else {
+        throw new Error('No authorization URL returned');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to initiate Meta OAuth. Check META_APP_ID in backend.', 'error');
+      setConnectingOAuth(false);
+    }
+  };
+
+  const handleDisconnectInstagram = async () => {
+    if (!activeWorkspace?.id) return;
+    if (!window.confirm('Disconnect your Instagram account? Automated message replies will pause until reconnected.')) {
+      return;
+    }
+    setDisconnecting(true);
+    try {
+      const updated = await apiClient.disconnectInstagram(activeWorkspace.id);
+      setDiagnostics(updated);
+      showToast('Instagram account safely disconnected', 'info');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to disconnect Instagram account', 'error');
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
   useEffect(() => {
-    if (activeTab === 'diagnostics') {
+    if (activeWorkspace?.id) {
       loadDiagnostics();
     }
-  }, [activeTab, activeWorkspace?.id]);
+  }, [activeWorkspace?.id]);
+
+  useEffect(() => {
+    if (searchParams.get('connected') === 'true') {
+      showToast('Instagram Professional account successfully connected via Meta OAuth! 🎉', 'success');
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (activeTab === 'diagnostics' || activeTab === 'settings') {
+      loadDiagnostics();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (!activeWorkspace?.id) return;
@@ -791,63 +845,201 @@ export function AutoDMPage() {
 
       {/* Settings Tab */}
       {activeTab === 'settings' && (
-        <div
-          style={{
-            background: 'var(--color-surface-solid)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 16,
-            padding: '1.75rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 16,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Instagram size={24} style={{ color: '#e1306c' }} />
-            <div>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)' }}>Meta Graph API Integration</h3>
-              <p style={{ fontSize: 12, color: '#94a3b8' }}>
-                Powers official comment-to-DM automation according to Meta Business terms.
-              </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Main Connection Card */}
+          <div
+            style={{
+              background: 'var(--color-surface-solid)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 16,
+              padding: '1.75rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 16,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                  color: '#fff',
+                }}>
+                  <Instagram size={24} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
+                    Official Instagram Professional OAuth 2.0
+                  </h3>
+                  <p style={{ fontSize: 12, color: '#94a3b8', margin: '2px 0 0' }}>
+                    Powers comment-to-DM automation, story replies, and public comment acknowledgment via Meta Graph API v19.0+.
+                  </p>
+                </div>
+              </div>
+
+              {diagnostics?.connected ? (
+                <span className="diagnostic-status-pill status-pill--healthy" style={{ padding: '6px 12px' }}>
+                  CONNECTED
+                </span>
+              ) : diagnostics?.status === 'EXPIRED' ? (
+                <span className="diagnostic-status-pill status-pill--error" style={{ padding: '6px 12px' }}>
+                  TOKEN EXPIRED
+                </span>
+              ) : (
+                <span className="diagnostic-status-pill status-pill--warning" style={{ padding: '6px 12px' }}>
+                  NOT CONNECTED
+                </span>
+              )}
+            </div>
+
+            {/* Connection Details or Connect Button */}
+            {diagnostics?.connected ? (
+              <div style={{
+                background: 'rgba(34, 197, 94, 0.05)',
+                border: '1px solid rgba(34, 197, 94, 0.2)',
+                borderRadius: 12,
+                padding: '1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 12, color: '#94a3b8' }}>Connected Account:</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: '#22c55e' }}>
+                      @{diagnostics.accountHandle}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#64748b' }}>
+                      Account ID: <code>{diagnostics.providerAccountId}</code>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ borderColor: 'rgba(239, 68, 68, 0.4)', color: '#ef4444' }}
+                    onClick={handleDisconnectInstagram}
+                    disabled={disconnecting}
+                  >
+                    {disconnecting ? 'Disconnecting...' : 'Disconnect Account'}
+                  </button>
+                </div>
+
+                <div style={{ fontSize: 12, color: '#94a3b8', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
+                  🔒 <strong>Token Security:</strong> Page Access Token is encrypted with AES-256-GCM.
+                  {diagnostics.tokenMasked && <span> Masked token: <code>{diagnostics.tokenMasked}</code></span>}
+                </div>
+              </div>
+            ) : (
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid rgba(255, 255, 255, 0.06)',
+                borderRadius: 12,
+                padding: '1.5rem',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 12,
+              }}>
+                <p style={{ fontSize: 13, color: '#94a3b8', maxWidth: 480, margin: 0, lineHeight: 1.5 }}>
+                  Click below to securely connect your Instagram Professional account via Meta OAuth 2.0.
+                  We never request your password; Meta issues an encrypted token directly to your workspace.
+                </p>
+
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleConnectMetaOAuth}
+                  disabled={connectingOAuth}
+                  style={{
+                    background: 'linear-gradient(135deg, #e1306c, #833ab4)',
+                    border: 'none',
+                    fontWeight: 600,
+                    padding: '10px 22px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    fontSize: 14,
+                  }}
+                >
+                  <Instagram size={18} />
+                  <span>{connectingOAuth ? 'Redirecting to Meta...' : 'Connect with Instagram (Meta OAuth)'}</span>
+                </button>
+                <div style={{ fontSize: 11, color: '#64748b' }}>
+                  Requires Instagram Professional account (Creator or Business) linked to a Facebook Page.
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Secure Backend Configuration Notice */}
+          <div
+            style={{
+              background: 'var(--color-surface-solid)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 16,
+              padding: '1.5rem',
+            }}
+          >
+            <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <ShieldCheck size={16} style={{ color: '#38bdf8' }} />
+              Secure Backend Credential Management
+            </h4>
+            <p style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
+              To ensure compliance with Meta developer policies, your Meta App Secret (<code>META_APP_SECRET</code>), App ID (<code>META_APP_ID</code>), Webhook Verify Token (<code>META_VERIFY_TOKEN</code>), and Token Encryption Key (<code>META_ENCRYPTION_KEY</code>) are securely loaded from backend server environment variables. They are never transmitted to React or stored in browser local storage.
+            </p>
+          </div>
+
+          {/* Meta Setup Instructions Checklist */}
+          <div
+            style={{
+              background: 'var(--color-surface-solid)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 16,
+              padding: '1.5rem',
+            }}
+          >
+            <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 12 }}>
+              Instagram Professional Account Setup Checklist
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { step: '1', title: 'Switch to Instagram Professional Account', desc: 'In Instagram mobile app: Settings & Privacy > Account type and tools > Switch to Professional account (choose Creator or Business).' },
+                { step: '2', title: 'Link Instagram to a Facebook Page', desc: 'In Meta Accounts Center or Facebook Page Settings: Link your Instagram Professional account to a published Facebook Page.' },
+                { step: '3', title: 'Enable Message Access in Instagram App', desc: 'In Instagram mobile app: Settings & Privacy > Messages and story replies > Message controls > Turn ON "Allow access to messages".' },
+                { step: '4', title: 'Configure Webhook in Meta Developer Portal', desc: 'Set Callback URL to your HTTPS domain: https://<domain>/api/v1/webhooks/instagram with your configured Verify Token.' },
+                { step: '5', title: 'Subscribe to Webhook Fields', desc: 'In Meta Developer Portal > Instagram Graph API > Webhooks: Subscribe to "comments" and "messages".' },
+              ].map((item) => (
+                <div key={item.step} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    background: 'rgba(56, 189, 248, 0.15)',
+                    color: '#38bdf8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}>
+                    {item.step}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{item.title}</div>
+                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{item.desc}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-
-          <div className="form-group">
-            <label className="form-label">Connected Instagram Business Account</label>
-            <input
-              type="text"
-              readOnly
-              value={mockCreatorProfile.connectedAccounts.instagram.handle}
-              className="form-input"
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Meta App Client ID (for Live Production API)</label>
-            <input
-              type="text"
-              placeholder="e.g. 1982736412098"
-              className="form-input"
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Meta App Secret</label>
-            <input
-              type="password"
-              placeholder="••••••••••••••••••••"
-              className="form-input"
-            />
-          </div>
-
-          <button
-            className="btn btn-primary"
-            style={{ alignSelf: 'flex-start' }}
-            type="button"
-            onClick={() => showToast('Meta API configuration verified', 'success')}
-          >
-            Save Meta Settings
-          </button>
         </div>
       )}
 
@@ -880,15 +1072,29 @@ export function AutoDMPage() {
             <div className="diagnostic-card">
               <div className="diagnostic-card__header">
                 <span style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>INSTAGRAM CONNECTION</span>
-                <span className="diagnostic-status-pill status-pill--healthy">CONNECTED</span>
+                {diagnostics?.connected ? (
+                  <span className="diagnostic-status-pill status-pill--healthy">CONNECTED</span>
+                ) : diagnostics?.status === 'EXPIRED' ? (
+                  <span className="diagnostic-status-pill status-pill--error">TOKEN EXPIRED</span>
+                ) : (
+                  <span className="diagnostic-status-pill status-pill--warning">NOT CONNECTED</span>
+                )}
               </div>
               <div className="diagnostic-card__value">
-                @{diagnostics?.accountHandle || 'code.withnarayan'}
+                {diagnostics?.connected ? `@${diagnostics.accountHandle}` : 'No account connected'}
               </div>
               <div className="diagnostic-card__sub">
-                Account ID: <code>{diagnostics?.providerAccountId || '17841400000000001'}</code>
-                <br />
-                Type: Instagram Professional (Creator) linked to Facebook Page
+                {diagnostics?.connected ? (
+                  <>
+                    Account ID: <code>{diagnostics.providerAccountId}</code>
+                    <br />
+                    Type: Instagram Professional (Creator/Business) linked to Facebook Page
+                  </>
+                ) : (
+                  <>
+                    Connect your account in the <strong>Settings</strong> tab using official Meta OAuth.
+                  </>
+                )}
               </div>
             </div>
 
@@ -896,10 +1102,14 @@ export function AutoDMPage() {
             <div className="diagnostic-card">
               <div className="diagnostic-card__header">
                 <span style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>META TOKEN ENCRYPTION</span>
-                <span className="diagnostic-status-pill status-pill--healthy">AES-256-GCM</span>
+                {diagnostics?.tokenConfigured ? (
+                  <span className="diagnostic-status-pill status-pill--healthy">AES-256-GCM</span>
+                ) : (
+                  <span className="diagnostic-status-pill status-pill--warning">NOT CONFIGURED</span>
+                )}
               </div>
               <div className="diagnostic-card__value" style={{ fontFamily: 'monospace', fontSize: 15 }}>
-                {diagnostics?.tokenMasked || 'EAAG...3x9K'}
+                {diagnostics?.tokenMasked || 'No token stored'}
               </div>
               <div className="diagnostic-card__sub">
                 Authenticated ciphertext with unique 12-byte IV/nonce. Master key loaded from environment variable, never logged or committed.
@@ -956,10 +1166,10 @@ export function AutoDMPage() {
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {(diagnostics?.permissions || [
-                { permission: 'instagram_manage_comments', required: true, granted: true, description: 'Read comments on posts and reels and post public comment replies' },
-                { permission: 'instagram_manage_messages', required: true, granted: true, description: 'Send automated Direct Messages in response to comments within 7 days' },
-                { permission: 'pages_manage_metadata', required: true, granted: true, description: 'Subscribe to official Meta Graph API webhooks' },
-                { permission: 'pages_read_engagement', required: true, granted: true, description: 'Read follower events and engagement telemetry' },
+                { permission: 'instagram_manage_comments', required: true, granted: false, description: 'Read comments on posts and reels and post public comment replies' },
+                { permission: 'instagram_manage_messages', required: true, granted: false, description: 'Send automated Direct Messages in response to comments within 7 days' },
+                { permission: 'pages_manage_metadata', required: true, granted: false, description: 'Subscribe to official Meta Graph API webhooks' },
+                { permission: 'pages_read_engagement', required: true, granted: false, description: 'Read follower events and engagement telemetry' },
               ]).map((perm) => (
                 <div
                   key={perm.permission}
@@ -975,7 +1185,11 @@ export function AutoDMPage() {
                 >
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <CheckCircle size={15} style={{ color: '#22c55e' }} />
+                      {perm.granted ? (
+                        <CheckCircle size={15} style={{ color: '#22c55e' }} />
+                      ) : (
+                        <AlertCircle size={15} style={{ color: '#f59e0b' }} />
+                      )}
                       <code style={{ fontSize: 13, fontWeight: 700, color: '#38bdf8' }}>{perm.permission}</code>
                       {perm.required && (
                         <span style={{ fontSize: 10, background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>
@@ -985,7 +1199,11 @@ export function AutoDMPage() {
                     </div>
                     <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 3 }}>{perm.description}</div>
                   </div>
-                  <span className="diagnostic-status-pill status-pill--healthy">GRANTED</span>
+                  {perm.granted ? (
+                    <span className="diagnostic-status-pill status-pill--healthy">GRANTED</span>
+                  ) : (
+                    <span className="diagnostic-status-pill status-pill--warning">PENDING OAUTH</span>
+                  )}
                 </div>
               ))}
             </div>

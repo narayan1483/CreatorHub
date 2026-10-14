@@ -86,6 +86,14 @@ public class AutomationController {
         return ResponseEntity.ok(ApiResponse.ok("Instagram account connection updated successfully", updated));
     }
 
+    @PostMapping("/disconnect")
+    public ResponseEntity<ApiResponse<com.creatorhub.dto.autodm.InstagramDiagnosticsDto>> disconnectAccount(
+            @PathVariable UUID workspaceId,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        com.creatorhub.dto.autodm.InstagramDiagnosticsDto updated = automationService.disconnectInstagramAccount(workspaceId, userPrincipal.getId());
+        return ResponseEntity.ok(ApiResponse.ok("Instagram account disconnected successfully", updated));
+    }
+
     @PostMapping("/diagnostics/test-dry-run")
     public ResponseEntity<ApiResponse<com.creatorhub.model.AutomationExecution>> testDryRun(
             @PathVariable UUID workspaceId,

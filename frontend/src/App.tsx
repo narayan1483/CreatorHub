@@ -23,6 +23,7 @@ import { BroadcastStudioPage } from './pages/BroadcastStudioPage';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 import { PublicStorePage } from './pages/PublicStorePage';
+import { MetaOAuthCallbackPage } from './pages/MetaOAuthCallbackPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,6 +67,7 @@ export default function App() {
                 {/* Authentication Routes */}
                 <Route path="login" element={<LoginPage />} />
                 <Route path="signup" element={<SignupPage />} />
+                <Route path="auth/meta/callback" element={<MetaOAuthCallbackPage />} />
 
                 {/* Public Buyer-Facing Storefront */}
                 <Route path="store/:username" element={<PublicStorePage />} />

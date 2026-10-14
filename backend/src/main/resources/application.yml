@@ -52,8 +52,11 @@ creatorhub:
   security:
     encryption-key: ${META_ENCRYPTION_KEY:${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}}
   meta:
-    verify-token: ${META_VERIFY_TOKEN:creatorhub_meta_verify_token_2026}
+    app-id: ${META_APP_ID:}
     app-secret: ${META_APP_SECRET:${JWT_SECRET:creatorhub_meta_app_secret_dev}}
+    verify-token: ${META_VERIFY_TOKEN:creatorhub_meta_verify_token_2026}
+    redirect-uri: ${META_REDIRECT_URI:http://localhost:5173/auth/meta/callback}
+    live-mode: ${CREATORHUB_META_LIVE_MODE:false}
   kafka:
     enabled: ${KAFKA_ENABLED:true}
 
