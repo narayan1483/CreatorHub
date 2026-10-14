@@ -173,7 +173,14 @@ export function AutoDMPage() {
     showToast('AutoDM performance data exported to CSV 📥', 'success');
   };
 
-  const handleToggleStatus = (id: string) => {
+  const handleToggleStatus = async (id: string) => {
+    if (activeWorkspace?.id) {
+      try {
+        await apiClient.toggleAutomationWorkflow(activeWorkspace.id, id);
+      } catch (err: any) {
+        showToast(err.message || 'Failed to toggle status on server', 'error');
+      }
+    }
     setWorkflows((prev) =>
       prev.map((w) => {
         if (w.id === id) {
@@ -186,11 +193,47 @@ export function AutoDMPage() {
     );
   };
 
-  const handleCreateWorkflow = (e: React.FormEvent) => {
+  const handleCreateWorkflow = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !newKeyword.trim()) {
       showToast('Please provide automation title and trigger keyword', 'error');
       return;
+    }
+
+    if (activeWorkspace?.id) {
+      try {
+        const created = await apiClient.createAutomationWorkflow(activeWorkspace.id, {
+          name: newTitle.trim(),
+          triggerKeyword: newKeyword.trim().toUpperCase(),
+          matchType: 'contains',
+          dmMessageTemplate: newDmMessage,
+          publicReplyTemplate: newPublicReply,
+        });
+
+        const newWf: AutoDMWorkflow = {
+          id: created.id,
+          name: created.name,
+          captionPreview: `Triggering on keyword "${created.triggerKeyword}"`,
+          thumbnailUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&q=80',
+          keyword: created.triggerKeyword,
+          dmMessage: created.dmMessageTemplate,
+          publicReply: created.publicReplyTemplate,
+          followersGained: created.followersGained || 0,
+          runs: created.runsCount || 0,
+          buttonClicks: created.buttonClicks || 0,
+          status: (created.status === 'ACTIVE' ? 'active' : 'paused') as 'active' | 'paused',
+          createdAt: 'Just now',
+        };
+
+        setWorkflows([newWf, ...workflows]);
+        setIsModalOpen(false);
+        setNewTitle('');
+        setNewKeyword('');
+        showToast(`AutoDM "${newTitle}" created & persisted! 🚀`, 'success');
+        return;
+      } catch (err: any) {
+        showToast(err.message || 'Failed to persist automation', 'error');
+      }
     }
 
     const newWf: AutoDMWorkflow = {

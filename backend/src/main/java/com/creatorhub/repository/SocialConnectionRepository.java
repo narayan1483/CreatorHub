@@ -12,4 +12,5 @@ import java.util.UUID;
 public interface SocialConnectionRepository extends JpaRepository<SocialConnection, UUID> {
     List<SocialConnection> findByWorkspaceId(UUID workspaceId);
     Optional<SocialConnection> findByWorkspaceIdAndProvider(UUID workspaceId, String provider);
+    Optional<SocialConnection> findByProviderAndProviderAccountId(String provider, String providerAccountId);
 }

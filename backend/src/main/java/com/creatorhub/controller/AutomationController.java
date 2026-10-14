@@ -60,4 +60,12 @@ public class AutomationController {
         SimulationResultDto result = automationService.simulateComment(workspaceId, request);
         return ResponseEntity.ok(ApiResponse.ok("Comment simulation executed", result));
     }
+
+    @GetMapping("/executions")
+    public ResponseEntity<ApiResponse<List<com.creatorhub.model.AutomationExecution>>> getExecutions(
+            @PathVariable UUID workspaceId,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        List<com.creatorhub.model.AutomationExecution> executions = automationService.getExecutions(workspaceId, userPrincipal.getId());
+        return ResponseEntity.ok(ApiResponse.ok(executions));
+    }
 }

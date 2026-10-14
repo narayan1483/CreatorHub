@@ -90,7 +90,8 @@ public class SecurityConfig {
                                 "/api/v1/store/**",
                                 "/api/v1/workspaces/by-slug/**",
                                 "/api/v1/workspaces/*/products/public",
-                                "/api/v1/workspaces/*/orders/checkout"
+                                "/api/v1/workspaces/*/orders/checkout",
+                                "/api/v1/webhooks/**"
                         ).permitAll()
                         // All other APIs require authentication
                         .anyRequest().authenticated()

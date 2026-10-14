@@ -126,6 +126,27 @@ export interface CustomerDto {
   createdAt: string;
 }
 
+export interface CreateWorkflowPayload {
+  name: string;
+  triggerKeyword: string;
+  matchType?: string;
+  dmMessageTemplate: string;
+  publicReplyTemplate: string;
+}
+
+export interface AutomationWorkflowDto {
+  id: string;
+  name: string;
+  triggerKeyword: string;
+  matchType: string;
+  dmMessageTemplate: string;
+  publicReplyTemplate: string;
+  status: string;
+  runsCount: number;
+  followersGained: number;
+  buttonClicks: number;
+}
+
 class ApiClient {
   private isRefreshing = false;
   private refreshSubscribers: ((token: string) => void)[] = [];
@@ -344,8 +365,25 @@ class ApiClient {
     return await this.request<OrderDto[]>(`/api/v1/workspaces/${workspaceId}/orders`);
   }
 
-  async getWorkspaceAutomations(workspaceId: string) {
-    return await this.request(`/api/v1/workspaces/${workspaceId}/automations`);
+  async getWorkspaceAutomations(workspaceId: string): Promise<AutomationWorkflowDto[]> {
+    return await this.request<AutomationWorkflowDto[]>(`/api/v1/workspaces/${workspaceId}/automations`);
+  }
+
+  async createAutomationWorkflow(workspaceId: string, payload: CreateWorkflowPayload): Promise<AutomationWorkflowDto> {
+    return await this.request<AutomationWorkflowDto>(`/api/v1/workspaces/${workspaceId}/automations`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async toggleAutomationWorkflow(workspaceId: string, workflowId: string): Promise<AutomationWorkflowDto> {
+    return await this.request<AutomationWorkflowDto>(`/api/v1/workspaces/${workspaceId}/automations/${workflowId}/toggle`, {
+      method: 'PATCH',
+    });
+  }
+
+  async getAutomationExecutions(workspaceId: string) {
+    return await this.request(`/api/v1/workspaces/${workspaceId}/automations/executions`);
   }
 
   async simulateComment(workspaceId: string, payload: {
