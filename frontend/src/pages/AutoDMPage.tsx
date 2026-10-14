@@ -49,7 +49,7 @@ import { InstagramLiveSimulator } from '../components/simulator/InstagramLiveSim
 import { SaaSCheckoutModal, type CheckoutProductInfo } from '../components/checkout/SaaSCheckoutModal';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
-import { apiClient, type InstagramDiagnosticsDto } from '../services/apiClient';
+import { apiClient, type InstagramDiagnosticsDto, type InstagramMediaDto } from '../services/apiClient';
 import './AutoDMPage.css';
 
 const samplePosts = [
@@ -128,10 +128,28 @@ export function AutoDMPage() {
   const [postScope, setPostScope] = useState<'specific' | 'any' | 'next'>('specific');
   const [selectedPostId, setSelectedPostId] = useState<string>('p_dsa');
   const [keywordType, setKeywordType] = useState<'specific' | 'any'>('specific');
-  const [keywordsList, setKeywordsList] = useState<string[]>(['BLUEPRINT']);
+  const [keywordsList, setKeywordsList] = useState<string[]>(['PDF']);
   const [currentKeywordInput, setCurrentKeywordInput] = useState('');
   const [aiSmartReply, setAiSmartReply] = useState(false);
   const [isDryRunToggle, setIsDryRunToggle] = useState(true);
+  const [creatorMedia, setCreatorMedia] = useState<InstagramMediaDto[]>([]);
+  const [mediaLoading, setMediaLoading] = useState(false);
+
+  const loadCreatorMedia = async () => {
+    if (!activeWorkspace?.id) return;
+    setMediaLoading(true);
+    try {
+      const media = await apiClient.getInstagramMedia(activeWorkspace.id);
+      if (Array.isArray(media) && media.length > 0) {
+        setCreatorMedia(media);
+        setSelectedPostId(media[0].id);
+      }
+    } catch (err) {
+      console.warn('Could not fetch Instagram media, using fallback posts', err);
+    } finally {
+      setMediaLoading(false);
+    }
+  };
 
   const loadDiagnostics = async () => {
     if (!activeWorkspace?.id) return;
@@ -139,6 +157,9 @@ export function AutoDMPage() {
     try {
       const data = await apiClient.getInstagramDiagnostics(activeWorkspace.id);
       setDiagnostics(data);
+      if (data?.connected) {
+        loadCreatorMedia();
+      }
     } catch (err) {
       console.error('Failed to load diagnostics', err);
     } finally {
@@ -348,17 +369,22 @@ export function AutoDMPage() {
 
   const handleCreateWorkflow = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle.trim() || !newKeyword.trim()) {
-      showToast('Please provide automation title and trigger keyword', 'error');
+    const effectiveKeyword = (keywordsList[0] || newKeyword || 'PDF').trim().toUpperCase();
+    const effectiveTitle = newTitle.trim() || `AutoDM ${effectiveKeyword} Reply`;
+    const resolvedMediaId = postScope === 'specific' ? selectedPostId : 'ALL';
+
+    if (!effectiveKeyword) {
+      showToast('Please provide a trigger keyword like PDF', 'error');
       return;
     }
 
     if (activeWorkspace?.id) {
       try {
         const created = await apiClient.createAutomationWorkflow(activeWorkspace.id, {
-          name: newTitle.trim(),
-          triggerKeyword: newKeyword.trim().toUpperCase(),
+          name: effectiveTitle,
+          triggerKeyword: effectiveKeyword,
           matchType: 'contains',
+          mediaId: resolvedMediaId,
           dmMessageTemplate: newDmMessage,
           publicReplyTemplate: newPublicReply,
         });
@@ -366,7 +392,7 @@ export function AutoDMPage() {
         const newWf: AutoDMWorkflow = {
           id: created.id,
           name: created.name,
-          captionPreview: `Triggering on keyword "${created.triggerKeyword}"`,
+          captionPreview: resolvedMediaId !== 'ALL' ? `Specific Post (${resolvedMediaId})` : 'All Posts & Reels',
           thumbnailUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&q=80',
           keyword: created.triggerKeyword,
           dmMessage: created.dmMessageTemplate,
@@ -380,9 +406,10 @@ export function AutoDMPage() {
 
         setWorkflows([newWf, ...workflows]);
         setIsModalOpen(false);
+        setModalStep(0);
         setNewTitle('');
         setNewKeyword('');
-        showToast(`AutoDM "${newTitle}" created & persisted! 🚀`, 'success');
+        showToast(`AutoDM "${effectiveTitle}" created for keyword "${effectiveKeyword}"! 🚀`, 'success');
         return;
       } catch (err: any) {
         showToast(err.message || 'Failed to persist automation', 'error');
@@ -1144,17 +1171,66 @@ export function AutoDMPage() {
               </div>
             </div>
 
+            {/* Redis & Rate Limiting Card */}
+            <div className="diagnostic-card">
+              <div className="diagnostic-card__header">
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>REDIS & RATE LIMITER</span>
+                <span className={`diagnostic-status-pill ${diagnostics?.redis?.status === 'HEALTHY' ? 'status-pill--healthy' : 'status-pill--warning'}`}>
+                  {diagnostics?.redis?.status === 'HEALTHY' ? 'REDIS 7 ONLINE' : 'IN-MEMORY SLIDING WINDOW'}
+                </span>
+              </div>
+              <div className="diagnostic-card__value" style={{ fontSize: 15 }}>
+                {diagnostics?.redis?.limitPerMinute || 50} DMs/min limit
+              </div>
+              <div className="diagnostic-card__sub">
+                Sliding window rate limiter protects Meta account from spam detection. 24-hour event deduplication prevents duplicate replies.
+              </div>
+            </div>
+
             {/* Engine Dispatch Mode Card */}
             <div className="diagnostic-card">
               <div className="diagnostic-card__header">
                 <span style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>MESSAGE DISPATCH MODE</span>
-                <span className="diagnostic-status-pill status-pill--warning">DRY_RUN (SAFE)</span>
+                <span className={`diagnostic-status-pill ${diagnostics?.liveModeEnabled ? 'status-pill--healthy' : 'status-pill--warning'}`}>
+                  {diagnostics?.liveModeEnabled ? 'LIVE SENDING' : 'DRY_RUN (SAFE)'}
+                </span>
               </div>
-              <div className="diagnostic-card__value" style={{ color: '#fbbf24' }}>
-                Simulated Dry-Run Active
+              <div className="diagnostic-card__value" style={{ color: diagnostics?.liveModeEnabled ? '#22c55e' : '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <span style={{ fontSize: 15 }}>{diagnostics?.liveModeEnabled ? 'Official Meta API Live' : 'Simulated Dry-Run'}</span>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  style={{
+                    background: diagnostics?.liveModeEnabled ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)',
+                    color: diagnostics?.liveModeEnabled ? '#ef4444' : '#22c55e',
+                    border: '1px solid currentColor',
+                    fontSize: 11,
+                    padding: '3px 8px',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                  }}
+                  onClick={async () => {
+                    if (!activeWorkspace?.id) return;
+                    const nextMode = !diagnostics?.liveModeEnabled;
+                    if (nextMode && !window.confirm('Enable LIVE message dispatch? CreatorHub will send REAL Instagram DMs to users who comment on your posts via Meta Graph API v19.0.')) {
+                      return;
+                    }
+                    try {
+                      const res = await apiClient.setLiveMode(activeWorkspace.id, nextMode);
+                      setDiagnostics(res);
+                      showToast(`Dispatch mode updated to ${nextMode ? 'LIVE' : 'DRY-RUN'}`, 'success');
+                    } catch (err: any) {
+                      showToast(err.message || 'Failed to update dispatch mode', 'error');
+                    }
+                  }}
+                >
+                  {diagnostics?.liveModeEnabled ? 'Switch to Dry-Run' : 'Enable Live Mode'}
+                </button>
               </div>
               <div className="diagnostic-card__sub">
-                Prevents accidental live messages to followers. Full workflow logic, template formatting, and database execution records run safely.
+                {diagnostics?.liveModeEnabled
+                  ? 'Real Meta Graph API v19.0 calls active. Real Instagram DMs will be delivered to eligible commenters.'
+                  : 'Safe simulation active. Full workflow logic, keyword matching, and audit records run without sending actual DMs.'}
               </div>
             </div>
           </div>
@@ -1468,9 +1544,11 @@ export function AutoDMPage() {
                     <div className="creator-avatar-ring">
                       <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80" alt="" />
                     </div>
-                    <div className="creator-handle-name">code.withnarayan</div>
-                    <span className="add-account-link" onClick={() => showToast('Instagram account connected via Meta OAuth', 'info')}>
-                      Add another account
+                    <div className="creator-handle-name">
+                      {diagnostics?.connected ? `@${diagnostics.accountHandle}` : 'Not connected'}
+                    </div>
+                    <span className="add-account-link" onClick={() => setActiveTab('settings')}>
+                      {diagnostics?.connected ? 'Manage Connection' : 'Connect Meta Account'}
                     </span>
                   </div>
 
@@ -1505,23 +1583,51 @@ export function AutoDMPage() {
 
                   {postScope === 'specific' && (
                     <div className="posts-grid">
-                      {samplePosts.map((post) => (
-                        <div
-                          key={post.id}
-                          className={`post-thumbnail-card ${selectedPostId === post.id ? 'selected' : ''}`}
-                          onClick={() => setSelectedPostId(post.id)}
-                        >
-                          <img src={post.thumbnail} alt={post.title} />
-                          {selectedPostId === post.id && (
-                            <div style={{ position: 'absolute', top: 6, right: 6, background: '#38bdf8', borderRadius: '50%', padding: 2 }}>
-                              <Check size={12} style={{ color: '#000' }} />
-                            </div>
-                          )}
-                          <div className="post-thumbnail-overlay">
-                            {post.title}
-                          </div>
+                      {mediaLoading ? (
+                        <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
+                          <RefreshCw size={20} className="animate-spin" style={{ margin: '0 auto 8px' }} />
+                          <div>Loading your live Instagram Posts & Reels...</div>
                         </div>
-                      ))}
+                      ) : creatorMedia.length > 0 ? (
+                        creatorMedia.map((post) => (
+                          <div
+                            key={post.id}
+                            className={`post-thumbnail-card ${selectedPostId === post.id ? 'selected' : ''}`}
+                            onClick={() => setSelectedPostId(post.id)}
+                          >
+                            <img
+                              src={post.thumbnailUrl || post.mediaUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&q=80'}
+                              alt={post.caption || 'Instagram Post'}
+                            />
+                            {selectedPostId === post.id && (
+                              <div style={{ position: 'absolute', top: 6, right: 6, background: '#38bdf8', borderRadius: '50%', padding: 2, zIndex: 2 }}>
+                                <Check size={12} style={{ color: '#000' }} />
+                              </div>
+                            )}
+                            <div className="post-thumbnail-overlay">
+                              {post.caption ? (post.caption.length > 36 ? post.caption.substring(0, 36) + '...' : post.caption) : `${post.mediaType} #${post.id.substring(0, 6)}`}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        samplePosts.map((post) => (
+                          <div
+                            key={post.id}
+                            className={`post-thumbnail-card ${selectedPostId === post.id ? 'selected' : ''}`}
+                            onClick={() => setSelectedPostId(post.id)}
+                          >
+                            <img src={post.thumbnail} alt={post.title} />
+                            {selectedPostId === post.id && (
+                              <div style={{ position: 'absolute', top: 6, right: 6, background: '#38bdf8', borderRadius: '50%', padding: 2 }}>
+                                <Check size={12} style={{ color: '#000' }} />
+                              </div>
+                            )}
+                            <div className="post-thumbnail-overlay">
+                              {post.title}
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   )}
                 </div>
@@ -1556,7 +1662,9 @@ export function AutoDMPage() {
                     <div className="creator-avatar-ring">
                       <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80" alt="" />
                     </div>
-                    <div className="creator-handle-name">code.withnarayan</div>
+                    <div className="creator-handle-name">
+                      {diagnostics?.connected ? `@${diagnostics.accountHandle}` : 'Professional Account'}
+                    </div>
                   </div>
 
                   <div style={{ fontSize: 13, fontWeight: 600, color: '#cbd5e1' }}>
@@ -1583,11 +1691,11 @@ export function AutoDMPage() {
                   {keywordType === 'specific' && (
                     <>
                       <div>
-                        <label className="form-label">Should include any of these:</label>
+                        <label className="form-label">Should include any of these (e.g. PDF):</label>
                         <div style={{ display: 'flex', gap: 8 }}>
                           <input
                             type="text"
-                            placeholder="Type a keyword (min. 1 characters)"
+                            placeholder="Type a keyword like PDF"
                             value={currentKeywordInput}
                             onChange={(e) => setCurrentKeywordInput(e.target.value)}
                             onKeyDown={(e) => {
@@ -1619,6 +1727,26 @@ export function AutoDMPage() {
                         </div>
                       </div>
 
+                      {/* Quick chip suggestions */}
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+                        <span style={{ fontSize: 11, color: '#94a3b8', alignSelf: 'center' }}>Quick add:</span>
+                        {['PDF', 'BLUEPRINT', 'GUIDE', 'TEMPLATE', 'NOTES', 'LINK'].map((kw) => (
+                          <button
+                            key={kw}
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '2px 8px', fontSize: 11, borderRadius: 999 }}
+                            onClick={() => {
+                              if (!keywordsList.includes(kw)) {
+                                setKeywordsList([...keywordsList, kw]);
+                              }
+                            }}
+                          >
+                            + {kw}
+                          </button>
+                        ))}
+                      </div>
+
                       {/* Keyword tag chips */}
                       <div className="keyword-chips-container">
                         {keywordsList.map((kw) => (
@@ -1634,7 +1762,7 @@ export function AutoDMPage() {
                       </div>
 
                       <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.4 }}>
-                        Keywords are not case-sensitive (e.g., "Hello" and "hello" are treated the same). Automations trigger only on exact keyword matches — for example, the keyword "ai" will match "ai" but not "pain".
+                        Keywords are not case-sensitive (e.g., "PDF" and "pdf" are treated the same). When someone comments "{keywordsList[0] || 'PDF'}", the AutoDM will immediately dispatch the eligible response!
                       </div>
 
                       <span className="add-account-link" onClick={() => showToast('Excluded keywords configuration', 'info')}>

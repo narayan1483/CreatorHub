@@ -38,12 +38,19 @@ services:
       CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       KAFKA_ENABLED: "true"
-      META_VERIFY_TOKEN: ${META_VERIFY_TOKEN:-creatorhub_meta_verify_token_2026}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      META_APP_ID: ${META_APP_ID:-}
       META_APP_SECRET: ${META_APP_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      META_VERIFY_TOKEN: ${META_VERIFY_TOKEN:-creatorhub_meta_verify_token_2026}
+      META_REDIRECT_URI: ${META_REDIRECT_URI:-http://localhost:5173/auth/meta/callback}
+      CREATORHUB_META_LIVE_MODE: ${CREATORHUB_META_LIVE_MODE:-false}
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_started
+      redis:
         condition: service_started
     networks:
       - creatorhub-network
@@ -72,6 +79,17 @@ services:
     networks:
       - creatorhub-network
 
+  redis:
+    image: redis:7-alpine
+    container_name: creatorhub-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - creatorhub-network
+
   frontend:
     build:
       context: ./frontend
@@ -89,6 +107,8 @@ volumes:
   postgres_data:
     driver: local
   kafka_data:
+    driver: local
+  redis_data:
     driver: local
 
 networks:

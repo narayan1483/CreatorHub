@@ -18,6 +18,8 @@ public class CreateWorkflowRequest {
     @NotBlank(message = "Public reply template is required")
     private String publicReplyTemplate;
 
+    private String mediaId;
+
     public CreateWorkflowRequest() {}
 
     public String getName() { return name; }
@@ -28,6 +30,9 @@ public class CreateWorkflowRequest {
 
     public String getMatchType() { return matchType; }
     public void setMatchType(String matchType) { this.matchType = matchType; }
+
+    public String getMediaId() { return mediaId; }
+    public void setMediaId(String mediaId) { this.mediaId = mediaId; }
 
     public String getDmMessageTemplate() { return dmMessageTemplate; }
     public void setDmMessageTemplate(String dmMessageTemplate) { this.dmMessageTemplate = dmMessageTemplate; }

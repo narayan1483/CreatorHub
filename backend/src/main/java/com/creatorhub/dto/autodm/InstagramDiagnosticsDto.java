@@ -14,6 +14,7 @@ public class InstagramDiagnosticsDto {
     private Instant tokenExpiresAt;
     private String dispatchMode;
     private boolean liveModeEnabled;
+    private RedisDiagnostics redis;
     private WebhookDiagnostics webhook;
     private KafkaDiagnostics kafka;
     private EngineDiagnostics engine;
@@ -21,6 +22,25 @@ public class InstagramDiagnosticsDto {
     private List<String> setupChecklist;
 
     public InstagramDiagnosticsDto() {}
+
+    public static class RedisDiagnostics {
+        private String status;
+        private boolean rateLimiterActive;
+        private int limitPerMinute;
+        private boolean dedupCacheActive;
+
+        public RedisDiagnostics(String status, boolean rateLimiterActive, int limitPerMinute, boolean dedupCacheActive) {
+            this.status = status;
+            this.rateLimiterActive = rateLimiterActive;
+            this.limitPerMinute = limitPerMinute;
+            this.dedupCacheActive = dedupCacheActive;
+        }
+
+        public String getStatus() { return status; }
+        public boolean isRateLimiterActive() { return rateLimiterActive; }
+        public int getLimitPerMinute() { return limitPerMinute; }
+        public boolean isDedupCacheActive() { return dedupCacheActive; }
+    }
 
     public static class WebhookDiagnostics {
         private String url;
@@ -132,6 +152,9 @@ public class InstagramDiagnosticsDto {
 
     public boolean isLiveModeEnabled() { return liveModeEnabled; }
     public void setLiveModeEnabled(boolean liveModeEnabled) { this.liveModeEnabled = liveModeEnabled; }
+
+    public RedisDiagnostics getRedis() { return redis; }
+    public void setRedis(RedisDiagnostics redis) { this.redis = redis; }
 
     public WebhookDiagnostics getWebhook() { return webhook; }
     public void setWebhook(WebhookDiagnostics webhook) { this.webhook = webhook; }

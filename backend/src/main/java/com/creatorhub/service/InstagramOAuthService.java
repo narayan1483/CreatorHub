@@ -1,6 +1,7 @@
 package com.creatorhub.service;
 
 import com.creatorhub.dto.autodm.InstagramDiagnosticsDto;
+import com.creatorhub.dto.meta.InstagramMediaDto;
 import com.creatorhub.dto.oauth.MetaAuthorizeUrlResponse;
 import com.creatorhub.dto.oauth.MetaOAuthCallbackRequest;
 import com.creatorhub.exception.BadRequestException;
@@ -22,11 +23,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Official Meta OAuth 2.0 & Instagram Professional Connection Service.
@@ -47,6 +44,7 @@ public class InstagramOAuthService {
     private final SocialConnectionRepository socialConnectionRepository;
     private final TokenEncryptionService tokenEncryptionService;
     private final AutomationService automationService;
+    private final RedisRateLimiterService redisRateLimiterService;
     private final RestTemplate restTemplate;
 
     @Value("${creatorhub.meta.app-id:}")
@@ -63,8 +61,9 @@ public class InstagramOAuthService {
             WorkspaceService workspaceService,
             SocialConnectionRepository socialConnectionRepository,
             TokenEncryptionService tokenEncryptionService,
-            AutomationService automationService) {
-        this(workspaceService, socialConnectionRepository, tokenEncryptionService, automationService, new RestTemplate());
+            AutomationService automationService,
+            RedisRateLimiterService redisRateLimiterService) {
+        this(workspaceService, socialConnectionRepository, tokenEncryptionService, automationService, redisRateLimiterService, new RestTemplate());
     }
 
     public InstagramOAuthService(
@@ -73,10 +72,22 @@ public class InstagramOAuthService {
             TokenEncryptionService tokenEncryptionService,
             AutomationService automationService,
             RestTemplate restTemplate) {
+        this(workspaceService, socialConnectionRepository, tokenEncryptionService, automationService,
+                new RedisRateLimiterService(null, false), restTemplate);
+    }
+
+    public InstagramOAuthService(
+            WorkspaceService workspaceService,
+            SocialConnectionRepository socialConnectionRepository,
+            TokenEncryptionService tokenEncryptionService,
+            AutomationService automationService,
+            RedisRateLimiterService redisRateLimiterService,
+            RestTemplate restTemplate) {
         this.workspaceService = workspaceService;
         this.socialConnectionRepository = socialConnectionRepository;
         this.tokenEncryptionService = tokenEncryptionService;
         this.automationService = automationService;
+        this.redisRateLimiterService = redisRateLimiterService;
         this.restTemplate = restTemplate;
     }
 
@@ -312,6 +323,94 @@ public class InstagramOAuthService {
             socialConnectionRepository.save(conn);
             log.info("Instagram account safely disconnected for workspace: {}", workspaceId);
         }
+        return automationService.getDiagnostics(workspaceId, userId);
+    }
+
+    /**
+     * Fetches genuine Instagram Posts and Reels for the connected account via Meta Graph API v19.0.
+     * Caches results via Redis with a 10-minute TTL.
+     */
+    public List<InstagramMediaDto> fetchCreatorMedia(UUID workspaceId, UUID userId) {
+        workspaceService.assertUserAccess(workspaceId, userId);
+
+        Optional<SocialConnection> connOpt = socialConnectionRepository
+                .findByWorkspaceIdAndProvider(workspaceId, "INSTAGRAM");
+
+        if (connOpt.isEmpty() || !"CONNECTED".equalsIgnoreCase(connOpt.get().getStatus())) {
+            return Collections.emptyList();
+        }
+
+        SocialConnection conn = connOpt.get();
+        String igAccountId = conn.getProviderAccountId();
+        if (igAccountId == null || igAccountId.isBlank()) {
+            return Collections.emptyList();
+        }
+
+        // Check Redis cache first
+        List<InstagramMediaDto> cached = redisRateLimiterService.getCachedMedia(igAccountId);
+        if (cached != null) {
+            log.info("Returning cached Instagram media for account {}", igAccountId);
+            return cached;
+        }
+
+        // Decrypt stored access token
+        String accessToken = null;
+        try {
+            accessToken = tokenEncryptionService.decrypt(conn.getEncryptedAccessToken());
+        } catch (Exception e) {
+            log.warn("Failed to decrypt access token for media fetch: {}", e.getMessage());
+            return Collections.emptyList();
+        }
+
+        if (accessToken == null || accessToken.isBlank()) {
+            return Collections.emptyList();
+        }
+
+        try {
+            String url = UriComponentsBuilder.fromHttpUrl("https://graph.facebook.com/v19.0/" + igAccountId + "/media")
+                    .queryParam("fields", "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count")
+                    .queryParam("limit", 25)
+                    .queryParam("access_token", accessToken)
+                    .toUriString();
+
+            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                List<Map<String, Object>> data = (List<Map<String, Object>>) response.getBody().get("data");
+                if (data != null) {
+                    List<InstagramMediaDto> mediaList = new ArrayList<>();
+                    for (Map<String, Object> item : data) {
+                        InstagramMediaDto dto = new InstagramMediaDto(
+                                (String) item.get("id"),
+                                (String) item.get("caption"),
+                                (String) item.get("media_type"),
+                                (String) item.get("media_url"),
+                                (String) item.get("thumbnail_url"),
+                                (String) item.get("permalink"),
+                                item.get("like_count") != null ? ((Number) item.get("like_count")).longValue() : 0L,
+                                item.get("comments_count") != null ? ((Number) item.get("comments_count")).longValue() : 0L,
+                                (String) item.get("timestamp")
+                        );
+                        mediaList.add(dto);
+                    }
+                    redisRateLimiterService.cacheMedia(igAccountId, mediaList);
+                    log.info("Successfully fetched and cached {} Instagram posts for account {}", mediaList.size(), igAccountId);
+                    return mediaList;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to fetch Instagram media from Meta Graph API for account {}: {}", igAccountId, e.getMessage());
+        }
+
+        return Collections.emptyList();
+    }
+
+    /**
+     * Enables or disables live message dispatch mode.
+     */
+    public InstagramDiagnosticsDto setLiveMode(UUID workspaceId, UUID userId, boolean enabled) {
+        workspaceService.assertUserAccess(workspaceId, userId);
+        automationService.setLiveMode(enabled);
+        log.info("Instagram AutoDM dispatch live mode set to {} by user {} in workspace {}", enabled, userId, workspaceId);
         return automationService.getDiagnostics(workspaceId, userId);
     }
 

@@ -8,6 +8,7 @@ public class AutomationWorkflowDto {
     private String name;
     private String triggerKeyword;
     private String matchType;
+    private String mediaId;
     private String dmMessageTemplate;
     private String publicReplyTemplate;
     private String status;
@@ -18,10 +19,15 @@ public class AutomationWorkflowDto {
     public AutomationWorkflowDto() {}
 
     public AutomationWorkflowDto(UUID id, String name, String triggerKeyword, String matchType, String dmMessageTemplate, String publicReplyTemplate, String status, int runsCount, int followersGained, int buttonClicks) {
+        this(id, name, triggerKeyword, matchType, null, dmMessageTemplate, publicReplyTemplate, status, runsCount, followersGained, buttonClicks);
+    }
+
+    public AutomationWorkflowDto(UUID id, String name, String triggerKeyword, String matchType, String mediaId, String dmMessageTemplate, String publicReplyTemplate, String status, int runsCount, int followersGained, int buttonClicks) {
         this.id = id;
         this.name = name;
         this.triggerKeyword = triggerKeyword;
         this.matchType = matchType;
+        this.mediaId = mediaId;
         this.dmMessageTemplate = dmMessageTemplate;
         this.publicReplyTemplate = publicReplyTemplate;
         this.status = status;
@@ -41,6 +47,9 @@ public class AutomationWorkflowDto {
 
     public String getMatchType() { return matchType; }
     public void setMatchType(String matchType) { this.matchType = matchType; }
+
+    public String getMediaId() { return mediaId; }
+    public void setMediaId(String mediaId) { this.mediaId = mediaId; }
 
     public String getDmMessageTemplate() { return dmMessageTemplate; }
     public void setDmMessageTemplate(String dmMessageTemplate) { this.dmMessageTemplate = dmMessageTemplate; }

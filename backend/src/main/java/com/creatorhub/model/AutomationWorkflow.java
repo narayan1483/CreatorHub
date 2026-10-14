@@ -24,6 +24,9 @@ public class AutomationWorkflow {
     @Column(name = "match_type", nullable = false)
     private String matchType = "contains"; // exact, contains
 
+    @Column(name = "media_id")
+    private String mediaId;
+
     @Column(name = "dm_message_template", nullable = false, columnDefinition = "TEXT")
     private String dmMessageTemplate;
 
@@ -97,6 +100,9 @@ public class AutomationWorkflow {
 
     public String getMatchType() { return matchType; }
     public void setMatchType(String matchType) { this.matchType = matchType; }
+
+    public String getMediaId() { return mediaId; }
+    public void setMediaId(String mediaId) { this.mediaId = mediaId; }
 
     public String getDmMessageTemplate() { return dmMessageTemplate; }
     public void setDmMessageTemplate(String dmMessageTemplate) { this.dmMessageTemplate = dmMessageTemplate; }

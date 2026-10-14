@@ -130,6 +130,7 @@ export interface CreateWorkflowPayload {
   name: string;
   triggerKeyword: string;
   matchType?: string;
+  mediaId?: string;
   dmMessageTemplate: string;
   publicReplyTemplate: string;
 }
@@ -139,6 +140,7 @@ export interface AutomationWorkflowDto {
   name: string;
   triggerKeyword: string;
   matchType: string;
+  mediaId?: string;
   dmMessageTemplate: string;
   publicReplyTemplate: string;
   status: string;
@@ -452,6 +454,29 @@ class ApiClient {
       method: 'POST',
     });
   }
+
+  async getInstagramMedia(workspaceId: string): Promise<InstagramMediaDto[]> {
+    return await this.request<InstagramMediaDto[]>(`/api/v1/workspaces/${workspaceId}/oauth/instagram/media`);
+  }
+
+  async setLiveMode(workspaceId: string, enabled: boolean): Promise<InstagramDiagnosticsDto> {
+    return await this.request<InstagramDiagnosticsDto>(`/api/v1/workspaces/${workspaceId}/oauth/instagram/live-mode`, {
+      method: 'POST',
+      body: JSON.stringify({ enabled }),
+    });
+  }
+}
+
+export interface InstagramMediaDto {
+  id: string;
+  caption?: string;
+  mediaType: string;
+  mediaUrl?: string;
+  thumbnailUrl?: string;
+  permalink?: string;
+  timestamp?: string;
+  likeCount: number;
+  commentsCount: number;
 }
 
 export interface InstagramDiagnosticsDto {
@@ -465,6 +490,12 @@ export interface InstagramDiagnosticsDto {
   tokenExpiresAt?: string;
   dispatchMode: 'DRY_RUN' | 'LIVE';
   liveModeEnabled: boolean;
+  redis?: {
+    status: string;
+    rateLimiterActive: boolean;
+    limitPerMinute: number;
+    dedupCacheActive: boolean;
+  };
   webhook: {
     url: string;
     verifyTokenConfigured: boolean;

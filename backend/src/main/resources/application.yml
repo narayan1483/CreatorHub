@@ -48,7 +48,16 @@ spring:
       properties:
         spring.json.trusted.packages: "com.creatorhub.*"
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+
 creatorhub:
+  redis:
+    enabled: ${REDIS_ENABLED:true}
   security:
     encryption-key: ${META_ENCRYPTION_KEY:${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}}
   meta:

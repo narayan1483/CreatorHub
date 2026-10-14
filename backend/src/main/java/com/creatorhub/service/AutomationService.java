@@ -42,6 +42,7 @@ public class AutomationService {
     private final TokenEncryptionService tokenEncryptionService;
     private final MetaGraphApiClient metaGraphApiClient;
     private final WebhookEventRepository webhookEventRepository;
+    private final RedisRateLimiterService redisRateLimiterService;
 
     @org.springframework.beans.factory.annotation.Value("${creatorhub.meta.live-mode:false}")
     private boolean liveModeConfigured;
@@ -54,6 +55,21 @@ public class AutomationService {
             TokenEncryptionService tokenEncryptionService,
             MetaGraphApiClient metaGraphApiClient,
             WebhookEventRepository webhookEventRepository) {
+        this(workflowRepository, executionRepository, workspaceService, socialConnectionRepository,
+                tokenEncryptionService, metaGraphApiClient, webhookEventRepository,
+                new RedisRateLimiterService(null, false));
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public AutomationService(
+            AutomationWorkflowRepository workflowRepository,
+            AutomationExecutionRepository executionRepository,
+            WorkspaceService workspaceService,
+            SocialConnectionRepository socialConnectionRepository,
+            TokenEncryptionService tokenEncryptionService,
+            MetaGraphApiClient metaGraphApiClient,
+            WebhookEventRepository webhookEventRepository,
+            RedisRateLimiterService redisRateLimiterService) {
         this.workflowRepository = workflowRepository;
         this.executionRepository = executionRepository;
         this.workspaceService = workspaceService;
@@ -61,6 +77,15 @@ public class AutomationService {
         this.tokenEncryptionService = tokenEncryptionService;
         this.metaGraphApiClient = metaGraphApiClient;
         this.webhookEventRepository = webhookEventRepository;
+        this.redisRateLimiterService = redisRateLimiterService;
+    }
+
+    public void setLiveMode(boolean liveMode) {
+        this.liveModeConfigured = liveMode;
+    }
+
+    public boolean isLiveModeConfigured() {
+        return liveModeConfigured;
     }
 
     @Transactional(readOnly = true)
@@ -84,6 +109,7 @@ public class AutomationService {
                 request.getPublicReplyTemplate()
         );
         workflow.setMatchType(request.getMatchType() != null ? request.getMatchType() : "contains");
+        workflow.setMediaId(request.getMediaId());
         workflow = workflowRepository.save(workflow);
 
         return mapToDto(workflow);
@@ -113,6 +139,13 @@ public class AutomationService {
 
         for (AutomationWorkflow wf : activeWorkflows) {
             if (!"ACTIVE".equalsIgnoreCase(wf.getStatus())) continue;
+
+            if (request.getMediaId() != null && !request.getMediaId().isBlank() &&
+                    wf.getMediaId() != null && !wf.getMediaId().isBlank() && !"ALL".equalsIgnoreCase(wf.getMediaId())) {
+                if (!wf.getMediaId().equals(request.getMediaId())) {
+                    continue;
+                }
+            }
 
             boolean match = "exact".equalsIgnoreCase(wf.getMatchType())
                     ? commentUpper.equals(wf.getTriggerKeyword())
@@ -158,8 +191,14 @@ public class AutomationService {
 
     @Transactional
     public void processCommentEvent(InstagramCommentEvent event) {
-        log.info("[AutomationService] Processing comment event: id={}, text='{}', pageId={}",
-                event.getEventId(), event.getCommentText(), event.getInstagramAccountId());
+        log.info("[AutomationService] Processing comment event: id={}, text='{}', pageId={}, mediaId={}",
+                event.getEventId(), event.getCommentText(), event.getInstagramAccountId(), event.getMediaId());
+
+        // 0. Deduplicate webhook events (24h sliding window via Redis with in-memory fallback)
+        if (event.getEventId() != null && redisRateLimiterService.isDuplicateWebhook(event.getEventId())) {
+            log.info("[AutomationService] Skipping duplicate webhook event: {}", event.getEventId());
+            return;
+        }
 
         // 1. Resolve workspace
         Workspace targetWorkspace = null;
@@ -191,12 +230,27 @@ public class AutomationService {
         for (AutomationWorkflow wf : activeWorkflows) {
             if (!"ACTIVE".equalsIgnoreCase(wf.getStatus())) continue;
 
+            // Media targeting check: if workflow specifies a mediaId, it must match the event mediaId
+            if (wf.getMediaId() != null && !wf.getMediaId().isBlank() && !"ALL".equalsIgnoreCase(wf.getMediaId())) {
+                if (event.getMediaId() != null && !wf.getMediaId().equals(event.getMediaId())) {
+                    continue; // Skip workflow bound to a different post/reel
+                }
+            }
+
             boolean match = "exact".equalsIgnoreCase(wf.getMatchType())
                     ? commentUpper.equals(wf.getTriggerKeyword())
                     : commentUpper.contains(wf.getTriggerKeyword());
 
             if (match) {
-                log.info("[AutomationService] MATCH FOUND! Workflow='{}', TriggerKeyword='{}'", wf.getName(), wf.getTriggerKeyword());
+                log.info("[AutomationService] MATCH FOUND! Workflow='{}', TriggerKeyword='{}', MediaId='{}'",
+                        wf.getName(), wf.getTriggerKeyword(), wf.getMediaId());
+
+                // Rate limiting check: Meta messaging threshold (max 50 req/min)
+                if (!redisRateLimiterService.acquireMessagingPermit(event.getInstagramAccountId())) {
+                    log.warn("[AutomationService] Rate limit exceeded for Instagram account {}. Skipping automated message dispatch.",
+                            event.getInstagramAccountId());
+                    return;
+                }
 
                 // Update workflow telemetry
                 wf.setRunsCount(wf.getRunsCount() + 1);
@@ -212,7 +266,8 @@ public class AutomationService {
                         .replace("{{store_link}}", "https://creatorhub.to/@" + targetWorkspace.getSlug());
 
                 // Execute via Meta Graph API Client
-                boolean isDryRun = event.isDryRun() || decryptedAccessToken == null;
+                // Only send real API call if liveMode is configured AND event is not dry-run AND decrypted token is present
+                boolean isDryRun = !liveModeConfigured || event.isDryRun() || decryptedAccessToken == null;
                 MetaGraphApiClient.DeliveryResult dmResult = metaGraphApiClient.sendDirectMessage(
                         event.getInstagramAccountId(),
                         event.getCommenterId(),
@@ -323,6 +378,14 @@ public class AutomationService {
 
         dto.setDispatchMode(liveModeConfigured ? "LIVE" : "DRY_RUN");
         dto.setLiveModeEnabled(liveModeConfigured);
+
+        // Redis diagnostics
+        dto.setRedis(new InstagramDiagnosticsDto.RedisDiagnostics(
+                redisRateLimiterService.getHealthStatus(),
+                true,
+                50,
+                true
+        ));
 
         // Webhook diagnostics
         dto.setWebhook(new InstagramDiagnosticsDto.WebhookDiagnostics(
@@ -457,6 +520,7 @@ public class AutomationService {
                 wf.getName(),
                 wf.getTriggerKeyword(),
                 wf.getMatchType(),
+                wf.getMediaId(),
                 wf.getDmMessageTemplate(),
                 wf.getPublicReplyTemplate(),
                 wf.getStatus(),

@@ -47,4 +47,22 @@ public class InstagramOAuthController {
         InstagramDiagnosticsDto diagnostics = oAuthService.disconnect(workspaceId, userPrincipal.getId());
         return ResponseEntity.ok(ApiResponse.ok("Instagram account disconnected successfully", diagnostics));
     }
+
+    @GetMapping("/media")
+    public ResponseEntity<ApiResponse<java.util.List<com.creatorhub.dto.meta.InstagramMediaDto>>> getCreatorMedia(
+            @PathVariable UUID workspaceId,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        java.util.List<com.creatorhub.dto.meta.InstagramMediaDto> media = oAuthService.fetchCreatorMedia(workspaceId, userPrincipal.getId());
+        return ResponseEntity.ok(ApiResponse.ok("Instagram media retrieved", media));
+    }
+
+    @PostMapping("/live-mode")
+    public ResponseEntity<ApiResponse<InstagramDiagnosticsDto>> toggleLiveMode(
+            @PathVariable UUID workspaceId,
+            @RequestBody java.util.Map<String, Boolean> body,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        boolean enabled = body != null && Boolean.TRUE.equals(body.get("enabled"));
+        InstagramDiagnosticsDto diagnostics = oAuthService.setLiveMode(workspaceId, userPrincipal.getId(), enabled);
+        return ResponseEntity.ok(ApiResponse.ok("Live mode updated successfully", diagnostics));
+    }
 }
